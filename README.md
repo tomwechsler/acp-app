@@ -71,4 +71,4 @@ KO-Controls, Reifegrad-Grenzen und Zertifizierungsschwellen liest der Build dire
 
 ## Veröffentlichung
 
-Der Workflow `.github/workflows/deploy.yml` veröffentlicht bei jedem Push auf `main`. Er braucht das GitHub-Secret `AZURE_STATIC_WEB_APPS_API_TOKEN` (Deployment-Token der Static Web App).
+Der Workflow `.github/workflows/deploy.yml` veröffentlicht bei jedem Push auf `main`. Er braucht das GitHub-Secret `AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_TREE_0C0564203` (Deployment-Token der Static Web App, von VS Code beim Erstellen angelegt).
