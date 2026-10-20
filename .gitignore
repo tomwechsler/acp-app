@@ -1,0 +1,10 @@
+# Generiert von build/build_data.py
+src/data/
+
+# Betriebssystem und Editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Python
+__pycache__/

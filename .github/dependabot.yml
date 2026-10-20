@@ -1,0 +1,17 @@
+# Dependabot prüft wöchentlich, ob das ACP-Repository neue Commits hat, und öffnet
+# dann einen Pull Request. Der Workflow baut und prüft den neuen Stand; nach dem
+# Merge wird die App automatisch neu veröffentlicht.
+version: 2
+updates:
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ACP-Framework
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

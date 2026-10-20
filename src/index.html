@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Kostenlose Cybersecurity-Selbstbewertung nach dem Active Cyber Program (ACP). Läuft vollständig im Browser, speichert keine Daten.">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <title>ACP Selbstbewertung</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Zum Inhalt springen</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand">
+        <img src="assets/acp-logo.png" alt="Active Cyber Program" width="135" height="50">
+        <span class="brand-title">Selbstbewertung</span>
+      </div>
+      <p class="no-storage-pill">Keine Datenspeicherung · keine Cookies</p>
+    </div>
+    <div class="wrap">
+      <ol id="stepper" class="stepper" aria-label="Fortschritt"></ol>
+    </div>
+  </header>
+
+  <main id="app" class="wrap" tabindex="-1">
+    <noscript>
+      <p class="alert alert-warning">Diese Selbstbewertung benötigt JavaScript. Alle Berechnungen laufen lokal in Ihrem Browser; es werden keine Daten übertragen.</p>
+    </noscript>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p id="framework-version">ACP-Framework</p>
+      <p>Massgebend ist die englische Fassung des ACP-Frameworks. Inhalte © Wechsler Information Solution, Lizenz CC BY-ND 4.0.</p>
+      <p><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz und Impressum</a> · <a href="https://github.com/tomwechsler/active-cyber-program" target="_blank" rel="noopener">ACP-Framework auf GitHub</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ACP: Daten bauen",
+      "type": "shell",
+      "command": "python3 build/build_data.py",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "ACP: Tests (macOS)",
+      "type": "shell",
+      "command": "/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m tests/scoring.test.mjs",
+      "dependsOn": "ACP: Daten bauen",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "ACP: Lokal starten (http://localhost:8080)",
+      "type": "shell",
+      "command": "python3 -m http.server 8080 --directory src",
+      "dependsOn": "ACP: Daten bauen",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
