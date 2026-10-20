@@ -305,7 +305,7 @@ function renderDomains() {
     summary.textContent = `${selected.length} von ${data.domains.length} Domänen ausgewählt · ${controls} Controls`;
     next.disabled = selected.length === 0;
     const missing = requiredDomains.filter((d) => !state.selected.includes(d.id));
-    notice.replaceChildren(
+    const message =
       selected.length === 0
         ? h('p', { class: 'alert alert-warning' }, 'Bitte wählen Sie mindestens eine Domäne aus.')
         : missing.length
@@ -316,8 +316,9 @@ function renderDomains() {
               `Sie haben ${missing.length} ${missing.length === 1 ? 'Domäne' : 'Domänen'} abgewählt, die im ACP immer bewertet werden. ` +
                 'Ihr Resultat zeigt Scores für die gewählten Domänen, aber keine Aussage zur Zertifizierungsreife.',
             )
-          : null,
-    );
+          : null;
+    // replaceChildren(null) würde den Text «null» einfügen, deshalb ohne Argument leeren.
+    notice.replaceChildren(...(message ? [message] : []));
   }
 
   function setAll(checked) {
