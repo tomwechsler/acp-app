@@ -2,7 +2,7 @@
 
 Liest aus dem ACP-Repository (Git-Submodule `active-cyber-program/`):
 
-  * assessment/assessment-questionnaire.de.md  Domänen, Controls, Leitfragen (Deutsch)
+  * assessment/assessment-questionnaire.de.md  Domänen, Controls, Leitfragen, Bewertungshilfe (Deutsch)
   * assessment/assessment-checklist.md         massgebliche Liste der Control-IDs (Englisch)
   * assessment/scoring-model.md                KO-Controls, Schwellenwerte, Reifegrade
   * VERSION                                    Framework-Version
@@ -47,6 +47,9 @@ DOMAIN_DE = re.compile(r"^# Domäne (\d+) – (.+?)\s*$")
 DOMAIN_EN = re.compile(r"^# Domain (\d+) – (.+?)\s*$")
 ENGLISH_NAME = re.compile(r"^\*Englisch: (.+)\*\s*$")
 CONTROL_ROW = re.compile(r"^\|\s*(\d+\.\d+)\s*\|(.*)$")
+HEADER_ROW = re.compile(r"^\|\s*ID\s*\|(.*)$")
+GUIDANCE_COLUMN = "Bewertungshilfe"
+GUIDANCE_PARTS = {"Zeigen lassen": "show", "2": "level2", "3": "level3"}
 CHECKLIST_LINE = re.compile(r"^(\d+\.\d+)\s+(.+?)\s*$")
 KO_MARK = re.compile(r"\s*\*\*\[KO\]\*\*|\s*\[KO\]")
 SCALE_ROW = re.compile(r"^\|\s*([0-3])\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$")
@@ -86,9 +89,21 @@ def strip_markdown(text):
     return re.sub(r"\*\*(.+?)\*\*", r"\1", text).strip()
 
 
+def parse_guidance(text):
+    """Zerlegt «Zeigen lassen: …<br>2: …<br>3: …» in show, level2 und level3."""
+    guidance = {}
+    for part in text.split("<br>"):
+        label, _, value = part.partition(":")
+        key = GUIDANCE_PARTS.get(label.strip())
+        if key and value.strip():
+            guidance[key] = strip_markdown(value)
+    return guidance if len(guidance) == len(GUIDANCE_PARTS) else None
+
+
 def parse_questionnaire(text):
     domains = []
     current = None
+    columns = []
     for line in text.splitlines():
         heading = DOMAIN_DE.match(line)
         if heading:
@@ -113,6 +128,10 @@ def parse_questionnaire(text):
         if english:
             current["nameEn"] = english.group(1).strip()
             continue
+        header = HEADER_ROW.match(line)
+        if header:
+            columns = [cell.strip() for cell in header.group(1).split("|")]
+            continue
         row = CONTROL_ROW.match(line)
         if row:
             cells = [cell.strip() for cell in row.group(2).split("|")]
@@ -120,10 +139,13 @@ def parse_questionnaire(text):
             control_text, questions = cells[0], cells[1]
             is_ko = bool(KO_MARK.search(control_text))
             questions = [strip_markdown(q.lstrip("•").strip()) for q in questions.split("<br>")]
+            guidance_index = columns.index(GUIDANCE_COLUMN) if GUIDANCE_COLUMN in columns else None
+            guidance_text = cells[guidance_index] if guidance_index is not None and guidance_index < len(cells) else ""
             current["controls"].append({
                 "id": row.group(1),
                 "text": strip_markdown(KO_MARK.sub("", control_text)),
                 "questions": [q for q in questions if q],
+                "guidance": parse_guidance(guidance_text),
                 "ko": is_ko,
             })
         elif line.startswith("# ") and not line.startswith("# Domäne"):
@@ -212,6 +234,8 @@ def validate(domains, scale, checklist, scoring, version, questionnaire_text):
             fail_if(not control["id"].startswith("{}.".format(domain["id"])),
                     "Control {} steht in Domäne {}.".format(control["id"], domain["id"]))
             fail_if(not control["questions"], "Control {} hat keine Leitfragen.".format(control["id"]))
+            fail_if(not control["guidance"],
+                    "Control {}: Bewertungshilfe fehlt oder ist unvollständig (Zeigen lassen, 2, 3).".format(control["id"]))
 
     ko_de = {c["id"] for d in domains for c in d["controls"] if c["ko"]}
     fail_if(ko_de != checklist_ko or ko_de != set(scoring["ko"]),

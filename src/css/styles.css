@@ -473,6 +473,16 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 .questions { margin: 10px 0 14px; padding-left: 20px; color: var(--muted); font-size: 0.93rem; }
 .questions li + li { margin-top: 3px; }
 
+.guidance { margin: 0 0 14px; font-size: 0.9rem; }
+.guidance summary { cursor: pointer; font-weight: 600; color: var(--primary); }
+.guidance dl { margin: 8px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+.guidance dt { font-weight: 600; }
+.guidance dd { margin: 0; color: var(--muted); }
+@media (max-width: 560px) {
+  .guidance dl { grid-template-columns: 1fr; }
+  .guidance dd { margin-bottom: 6px; }
+}
+
 .rating {
   border: none;
   margin: 0;

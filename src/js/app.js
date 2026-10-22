@@ -339,7 +339,7 @@ function renderDomains() {
     h(
       'p',
       { class: 'lead' },
-      'Für eine vollständige Selbstbewertung nach ACP wählen Sie die Domänen 1 bis 10. Domäne 11 (KI-Sicherheit) kommt dazu, wenn Sie KI-Systeme einsetzen.',
+      'Für eine vollständige Selbstbewertung nach ACP wählen Sie die Domänen 1 bis 10. Domäne 11 (KI-Sicherheit) kommt dazu, sobald Sie KI-Systeme oder KI-Dienste nutzen, auch KI-Assistenten oder Chat-Tools Ihrer Mitarbeitenden.',
     ),
     h(
       'div',
@@ -507,7 +507,28 @@ function scaleLegend() {
       h('dt', {}, 'N/A – Nicht anwendbar'),
       h('dd', {}, 'Das Thema existiert in Ihrer Organisation nicht (z. B. kein WLAN). Nicht anwendbare Controls zählen nicht zum Domänenscore. Bei Knock-out-Controls ist N/A nicht möglich.'),
     ),
+    h('p', { class: 'hint' }, 'Umfasst ein Control mehrere Aspekte, bestimmt der schwächste wesentliche Aspekt den Score. Kleine Organisationen brauchen keine umfangreiche Dokumentation: Kurze, klare Regeln genügen, wenn sie gelebt werden.'),
     h('p', { class: 'hint' }, 'Bei einem echten ACP-Assessment muss jede Bewertung mit Nachweisen belegt sein; ohne Nachweis gilt ein Control als 0.'),
+  );
+}
+
+function guidanceDetails(control) {
+  if (!control.guidance) return null;
+  const label = (score) => data.scale.find((s) => s.score === score)?.label ?? '';
+  return h(
+    'details',
+    { class: 'guidance' },
+    h('summary', {}, 'Bewertungshilfe'),
+    h(
+      'dl',
+      {},
+      h('dt', {}, 'Zeigen lassen'),
+      h('dd', {}, control.guidance.show),
+      h('dt', {}, `Typisch für 2 – ${label(2)}`),
+      h('dd', {}, control.guidance.level2),
+      h('dt', {}, `Typisch für 3 – ${label(3)}`),
+      h('dd', {}, control.guidance.level3),
+    ),
   );
 }
 
@@ -528,6 +549,7 @@ function controlCard(control, onChange) {
       control.ko ? badge('Knock-out', 'ko') : null,
     ),
     h('ul', { class: 'questions' }, control.questions.map((q) => h('li', {}, q))),
+    guidanceDetails(control),
     h(
       'fieldset',
       { class: 'rating' },

@@ -9,7 +9,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 1. Start mit Datenschutzhinweis
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
-4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt)
+4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen und Bewertungshilfe («Zeigen lassen», typisch für 2 und 3)
 5. Resultat: Gesamtscore, Reifegrad, Zertifizierungsreife (Indikation), Scores pro Domäne, KO-Controls, Handlungsfelder
 
 ## Projektstruktur
@@ -18,7 +18,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 acp-app/
 ├─ active-cyber-program/        ACP-Repository als Git-Submodule (nur lesen)
 ├─ build/
-│  ├─ build_data.py             liest den Fragenkatalog, prüft ihn, schreibt src/data/acp-data.js
+│  ├─ build_data.py             liest den Fragenkatalog inkl. Bewertungshilfe, prüft ihn, schreibt src/data/acp-data.js
 │  └─ scoring-model.sha256      geprüfte Fassung von scoring-model.md
 ├─ src/                         wird veröffentlicht
 │  ├─ index.html
@@ -48,7 +48,7 @@ Tests: `node tests/scoring.test.mjs` oder auf macOS ohne Node.js `/System/Librar
 ## Wie Änderungen im ACP-Repository in die App kommen
 
 1. Dependabot prüft jeden Montag, ob das ACP-Repository neue Commits hat, und öffnet einen Pull Request mit dem neuen Submodule-Stand.
-2. Der Workflow baut die Daten neu und prüft sie: 11 Domänen, Control-IDs identisch mit der Checkliste, KO-Controls und kritische Domänen konsistent, Version stimmt, Übersetzung aktuell, Tests grün.
+2. Der Workflow baut die Daten neu und prüft sie: 11 Domänen, Control-IDs identisch mit der Checkliste, Bewertungshilfe bei jedem Control vollständig, KO-Controls und kritische Domänen konsistent, Version stimmt, Übersetzung aktuell, Tests grün.
 3. Nach dem Merge veröffentlicht der Workflow die neue Version automatisch.
 
 Sofort aktualisieren statt auf Dependabot zu warten:
@@ -58,6 +58,10 @@ git submodule update --remote active-cyber-program
 python3 build/build_data.py
 git commit -am "ACP-Framework aktualisiert" && git push
 ```
+
+### Wenn sich die Anzahl Controls ändert
+
+Die Tests in `tests/scoring.test.mjs` prüfen die Anzahl Controls pro Domäne und rechnen die Beispiele des ACP-Repositorys nach. Kommen Controls dazu, schlägt der Workflow im Dependabot-Pull-Request fehl, bis die Tests angepasst sind. Die bisherige Version bleibt solange online.
 
 ### Wenn sich das Scoring-Modell ändert
 
