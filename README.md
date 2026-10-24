@@ -10,7 +10,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
 4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen und Bewertungshilfe («Zeigen lassen», typisch für 2 und 3)
-5. Resultat: Gesamtscore, Reifegrad, Zertifizierungsreife (Indikation), Scores pro Domäne, KO-Controls, Handlungsfelder
+5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser
 
 ## Projektstruktur
 

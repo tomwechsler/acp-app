@@ -32,6 +32,7 @@ const INDUSTRIES = [
 const SIZES = ['1–9', '10–49', '50–249', '250–999', '1000 und mehr'];
 
 const MAX_IMPROVEMENTS = 10;
+const CONTACT_EMAIL = 'training@videotrainer.ch';
 
 const totalControls = data.domains.reduce((sum, d) => sum + d.controls.length, 0);
 const requiredDomains = data.domains.filter((d) => !d.conditional);
@@ -144,7 +145,7 @@ function privacyNotice(variant = 'full') {
       'aside',
       { class: 'privacy privacy-compact', 'aria-label': 'Datenschutzhinweis' },
       h('strong', {}, 'Dieses Resultat wird nirgends gespeichert. '),
-      'Sobald Sie die Seite schliessen oder neu laden, ist es gelöscht. Notieren Sie sich bei Bedarf die wichtigsten Werte.',
+      'Sobald Sie die Seite schliessen oder neu laden, ist es gelöscht. Mit «Drucken / als PDF speichern» sichern Sie es lokal auf Ihrem Gerät.',
     );
   }
   return h(
@@ -610,11 +611,11 @@ function renderResult() {
             'Der Score bezieht sich nur auf die gewählten Domänen und ist nicht mit einem vollständigen ACP-Assessment vergleichbar.',
         ),
     scoreHero(result),
-    result.full ? readiness(result) : null,
+    improvementSection(result),
     domainChart(result),
     koSection(result),
-    improvementSection(result),
     distributionSection(result),
+    result.full ? readiness(result) : null,
     h(
       'p',
       { class: 'note' },
@@ -622,8 +623,15 @@ function renderResult() {
         'Offizielle ACP-Assessments und -Zertifizierungen führt ausschliesslich Wechsler Information Solution durch.',
     ),
     h(
+      'p',
+      { class: 'contact-line' },
+      'Fragen zu Ihrem Resultat oder zum ACP? ',
+      h('a', { href: `mailto:${CONTACT_EMAIL}` }, CONTACT_EMAIL),
+    ),
+    h(
       'div',
       { class: 'actions' },
+      button('Drucken / als PDF speichern', () => window.print(), 'primary'),
       button('Antworten bearbeiten', () => goTo('questions')),
       button('Neue Selbstbewertung', () => {
         if (window.confirm('Alle Eingaben und das Resultat werden gelöscht. Fortfahren?')) {
@@ -632,6 +640,29 @@ function renderResult() {
         }
       }, 'ghost'),
     ),
+    answersAppendix(result),
+  );
+}
+
+// Nur im Ausdruck sichtbar: alle Antworten, damit das gesicherte PDF vollständig ist.
+function answersAppendix(result) {
+  const label = (answer) => {
+    if (answer === NA) return 'N/A – Nicht anwendbar';
+    const step = data.scale.find((s) => s.score === answer);
+    return step ? `${step.score} – ${step.label}` : 'offen';
+  };
+  return h(
+    'section',
+    { class: 'print-only answers', 'aria-hidden': 'true' },
+    h('h2', {}, 'Ihre Antworten'),
+    result.domains.map((d) => [
+      h('h3', {}, `${d.id}. ${d.name}`),
+      h(
+        'table',
+        { class: 'answers-table' },
+        h('tbody', {}, d.controls.map((c) => h('tr', {}, h('td', {}, c.id), h('td', {}, c.text), h('td', {}, label(state.answers[c.id]))))),
+      ),
+    ]),
   );
 }
 
@@ -760,7 +791,7 @@ function improvementSection(result) {
   return h(
     'section',
     { class: 'card', 'aria-labelledby': 'improve-title' },
-    h('h2', { id: 'improve-title' }, 'Wichtigste Handlungsfelder'),
+    h('h2', { id: 'improve-title' }, 'Ihre wichtigsten nächsten Schritte'),
     top.length
       ? [
           h('p', { class: 'hint' }, 'Controls mit Score 0 oder 1, sortiert nach Dringlichkeit: Knock-out-Controls mit 0 zuerst, dann tiefster Score, kritische Domänen vor den übrigen.'),
