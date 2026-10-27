@@ -150,16 +150,9 @@ function privacyNotice(variant = 'full') {
   }
   return h(
     'aside',
-    { class: 'privacy', 'aria-labelledby': 'privacy-title' },
-    h('h2', { id: 'privacy-title' }, 'Ihre Daten bleiben bei Ihnen'),
-    h(
-      'ul',
-      {},
-      h('li', {}, h('strong', {}, 'Diese App speichert keine Daten.')),
-      h('li', {}, 'Firmenname, Antworten und Resultat bleiben nur im Arbeitsspeicher Ihres Browsers und werden an keinen Server übertragen.'),
-      h('li', {}, 'Es werden keine Cookies gesetzt und keine Analyse- oder Tracking-Tools verwendet.'),
-      h('li', {}, 'Beim Schliessen oder Neuladen der Seite werden alle Eingaben gelöscht.'),
-    ),
+    { class: 'privacy privacy-start', 'aria-label': 'Datenschutzhinweis' },
+    h('strong', {}, 'Ihre Daten bleiben bei Ihnen. '),
+    'Die App speichert nichts und überträgt nichts an einen Server, ohne Cookies und ohne Tracking. Beim Schliessen oder Neuladen der Seite sind alle Eingaben gelöscht. ',
     h('a', { href: 'datenschutz.html', target: '_blank', rel: 'noopener' }, 'Datenschutzerklärung (öffnet in neuem Tab)'),
   );
 }
@@ -176,9 +169,15 @@ function renderStart() {
     h(
       'p',
       { class: 'lead' },
-      `Mit dieser kostenlosen Selbstbewertung prüfen Sie Ihre Organisation anhand von ${totalControls} Controls in ${data.domains.length} Domänen. ` +
-        'Am Ende erhalten Sie sofort eine Zusammenfassung mit Score, Reifegrad und den wichtigsten Handlungsfeldern. ' +
-        'Für alle Domänen rechnen Sie je nach Erfahrung mit rund 45–60 Minuten; einzelne Domänen sind in wenigen Minuten bewertet.',
+      `Prüfen Sie Ihre Organisation anhand von ${totalControls} Controls in ${data.domains.length} Domänen. ` +
+        'Sie erhalten sofort Ihren Score, den Reifegrad und Ihre wichtigsten nächsten Schritte.',
+    ),
+    h(
+      'ul',
+      { class: 'facts' },
+      h('li', {}, 'Kostenlos und ohne Anmeldung'),
+      h('li', {}, 'Rund 45–60 Minuten für alle Domänen'),
+      h('li', {}, 'Einzelne Domänen in wenigen Minuten'),
     ),
     privacyNotice(),
     h(
