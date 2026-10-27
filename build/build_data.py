@@ -5,6 +5,7 @@ Liest aus dem ACP-Repository (Git-Submodule `active-cyber-program/`):
   * assessment/assessment-questionnaire.de.md  Domänen, Controls, Leitfragen, Bewertungshilfe (Deutsch)
   * assessment/assessment-checklist.md         massgebliche Liste der Control-IDs (Englisch)
   * assessment/scoring-model.md                KO-Controls, Schwellenwerte, Reifegrade
+  * docs/glossary.de.md                         Glossar (Deutsch)
   * VERSION                                    Framework-Version
 
 und schreibt `src/data/acp-data.js`. Die Datei wird nie von Hand bearbeitet.
@@ -38,6 +39,8 @@ SCORING_HASH_FILE = APP_ROOT / "build" / "scoring-model.sha256"
 QUESTIONNAIRE = Path("assessment/assessment-questionnaire.de.md")
 CHECKLIST = Path("assessment/assessment-checklist.md")
 SCORING_MODEL = Path("assessment/scoring-model.md")
+GLOSSARY = Path("docs/glossary.de.md")
+MIN_GLOSSARY_ENTRIES = 20
 VERSION_FILE = Path("VERSION")
 TRANSLATION_CHECK = Path("tools/check-translations.py")
 
@@ -151,6 +154,27 @@ def parse_questionnaire(text):
         elif line.startswith("# ") and not line.startswith("# Domäne"):
             current = None
     return domains
+
+
+def parse_glossary(text):
+    """Liest die Tabelle «| Begriff | Erklärung |» aus dem deutschen Glossar."""
+    entries = []
+    in_table = False
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")] if line.startswith("|") else None
+        if cells and cells[:2] == ["Begriff", "Erklärung"]:
+            in_table = True
+            continue
+        if not in_table or cells is None:
+            in_table = in_table and cells is not None
+            continue
+        if set(cells[0]) <= {"-", " "}:
+            continue
+        fail_if(len(cells) != 2 or not cells[0] or not cells[1], "Glossar: unvollständige Zeile «{}».".format(line.strip()))
+        entries.append({"term": strip_markdown(cells[0]), "text": strip_markdown(cells[1])})
+    fail_if(len(entries) < MIN_GLOSSARY_ENTRIES,
+            "Glossar: nur {} Begriffe gefunden (erwartet mindestens {}).".format(len(entries), MIN_GLOSSARY_ENTRIES))
+    return entries
 
 
 def parse_scale(text):
@@ -314,6 +338,7 @@ def main():
         scale = parse_scale(questionnaire_text)
         checklist = parse_checklist(read(CHECKLIST))
         scoring = parse_scoring_model(read(SCORING_MODEL))
+        glossary = parse_glossary(read(GLOSSARY))
 
         validate(domains, scale, checklist, scoring, version, questionnaire_text)
         check_translations(source)
@@ -329,6 +354,7 @@ def main():
             "overallThreshold": scoring["overallThreshold"],
             "criticalThreshold": scoring["criticalThreshold"],
             "domains": domains,
+            "glossary": glossary,
         }
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(

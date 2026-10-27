@@ -9,7 +9,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 1. Start mit Datenschutzhinweis
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
-4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen und Bewertungshilfe («Zeigen lassen», typisch für 2 und 3)
+4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»)
 5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser
 
 ## Projektstruktur
@@ -18,7 +18,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 acp-app/
 ├─ active-cyber-program/        ACP-Repository als Git-Submodule (nur lesen)
 ├─ build/
-│  ├─ build_data.py             liest den Fragenkatalog inkl. Bewertungshilfe, prüft ihn, schreibt src/data/acp-data.js
+│  ├─ build_data.py             liest Fragenkatalog inkl. Bewertungshilfe und Glossar, prüft sie, schreibt src/data/acp-data.js
 │  └─ scoring-model.sha256      geprüfte Fassung von scoring-model.md
 ├─ src/                         wird veröffentlicht
 │  ├─ index.html

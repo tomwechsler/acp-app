@@ -177,7 +177,8 @@ function renderStart() {
       'p',
       { class: 'lead' },
       `Mit dieser kostenlosen Selbstbewertung prüfen Sie Ihre Organisation anhand von ${totalControls} Controls in ${data.domains.length} Domänen. ` +
-        'Am Ende erhalten Sie sofort eine Zusammenfassung mit Score, Reifegrad und den wichtigsten Handlungsfeldern.',
+        'Am Ende erhalten Sie sofort eine Zusammenfassung mit Score, Reifegrad und den wichtigsten Handlungsfeldern. ' +
+        'Für alle Domänen rechnen Sie je nach Erfahrung mit rund 45–60 Minuten; einzelne Domänen sind in wenigen Minuten bewertet.',
     ),
     privacyNotice(),
     h(
@@ -465,6 +466,7 @@ function renderQuestions() {
           ? h('p', { class: 'note' }, `Kritische Domäne: Für eine Zertifizierung muss der Domänenscore mindestens ${data.criticalThreshold.toFixed(2)} betragen.`)
           : null,
         scaleLegend(),
+        glossaryLegend(),
         domain.controls.map((control) => controlCard(control, refreshProgress)),
         openNotice,
         h(
@@ -510,6 +512,16 @@ function scaleLegend() {
     ),
     h('p', { class: 'hint' }, 'Umfasst ein Control mehrere Aspekte, bestimmt der schwächste wesentliche Aspekt den Score. Kleine Organisationen brauchen keine umfangreiche Dokumentation: Kurze, klare Regeln genügen, wenn sie gelebt werden.'),
     h('p', { class: 'hint' }, 'Bei einem echten ACP-Assessment muss jede Bewertung mit Nachweisen belegt sein; ohne Nachweis gilt ein Control als 0.'),
+  );
+}
+
+function glossaryLegend() {
+  if (!data.glossary?.length) return null;
+  return h(
+    'details',
+    { class: 'scale-legend glossary' },
+    h('summary', {}, 'Begriffe erklärt (A–Z)'),
+    h('dl', {}, data.glossary.map((g) => [h('dt', {}, g.term), h('dd', {}, g.text)])),
   );
 }
 

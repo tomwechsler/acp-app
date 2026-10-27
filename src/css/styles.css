@@ -448,6 +448,7 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 .scale-legend dl { margin: 12px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
 .scale-legend dt { font-weight: 600; }
 .scale-legend dd { margin: 0; color: var(--muted); }
+.glossary dl { max-height: 420px; overflow-y: auto; padding-right: 6px; }
 @media (max-width: 560px) {
   .scale-legend dl { grid-template-columns: 1fr; }
   .scale-legend dd { margin-bottom: 8px; }

@@ -52,6 +52,7 @@ test('Datenbasis: 11 Domänen, 71 Controls, 6 KO-Controls', () => {
   equal(data.domains.length, 11, 'Domänen');
   equal(data.domains.reduce((s, d) => s + d.controls.length, 0), 71, 'Controls');
   equal(data.domains.flatMap((d) => d.controls).every((c) => c.guidance), true, 'Bewertungshilfe bei jedem Control');
+  equal(data.glossary.length >= 20 && data.glossary.every((g) => g.term && g.text), true, 'Glossar vollständig');
   equal(data.domains.flatMap((d) => d.controls).filter((c) => c.ko).length, 6, 'KO-Controls');
 });
 
