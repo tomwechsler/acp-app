@@ -45,12 +45,14 @@ const S200_7 = [2, 2, 2, 2, 2, 2, 2];
 const S214 = [2, 2, 2, 2, 2, 2, 3];
 const S229 = [2, 2, 2, 2, 2, 3, 3];
 const S243 = [2, 2, 2, 2, 3, 3, 3];
+// Domäne 11 mit neun Controls
+const S200_9 = [2, 2, 2, 2, 2, 2, 2, 2, 2];
 const ALL = data.domains.map((d) => d.id);
 const WITHOUT_AI = ALL.filter((id) => id !== 11);
 
-test('Datenbasis: 11 Domänen, 71 Controls, 6 KO-Controls', () => {
+test('Datenbasis: 11 Domänen, 74 Controls, 6 KO-Controls', () => {
   equal(data.domains.length, 11, 'Domänen');
-  equal(data.domains.reduce((s, d) => s + d.controls.length, 0), 71, 'Controls');
+  equal(data.domains.reduce((s, d) => s + d.controls.length, 0), 74, 'Controls');
   equal(data.domains.flatMap((d) => d.controls).every((c) => c.guidance), true, 'Bewertungshilfe bei jedem Control');
   equal(data.glossary.length >= 20 && data.glossary.every((g) => g.term && g.text), true, 'Glossar vollständig');
   equal(data.domains.flatMap((d) => d.controls).filter((c) => c.ko).length, 6, 'KO-Controls');
@@ -85,7 +87,7 @@ test('Beispiel Scoring-Modell: Domänenscore 2.17 aus 2,2,3,1,2,3', () => {
 
 test('Beispiel-Assessment (examples/example-assessment.md): Gesamtscore 2.14', () => {
   const answers = answersFor({
-    1: S217, 2: S200, 3: S229, 4: S233, 5: S214, 6: S200, 7: S214, 8: S225, 9: S200, 10: S217, 11: S200,
+    1: S217, 2: S200, 3: S229, 4: S233, 5: S214, 6: S200, 7: S214, 8: S225, 9: S200, 10: S217, 11: S200_9,
   });
   const r = evaluate(data, ALL, answers);
   equal(r.overall, 2.14, 'Gesamtscore');
