@@ -4,6 +4,7 @@
 
 import data from '../data/acp-data.js';
 import { NA, evaluate, domainResult } from './scoring.js';
+import { evaluateStandards } from './standards.js';
 
 const STEPS = [
   { id: 'start', label: 'Start' },
@@ -46,6 +47,7 @@ function initialState() {
     selected: requiredDomains.map((d) => d.id),
     answers: {},
     domainIndex: 0,
+    standardsView: data.standards[0].id,
     dirty: false,
   };
 }
@@ -178,6 +180,7 @@ function renderStart() {
       h('li', {}, 'Kostenlos und ohne Anmeldung'),
       h('li', {}, 'Rund 45–60 Minuten für alle Domänen'),
       h('li', {}, 'Einzelne Domänen in wenigen Minuten'),
+      h('li', {}, 'Zugeordnet zu NIS2, ISO/IEC 27001 und NIST CSF'),
     ),
     privacyNotice(),
     h(
@@ -186,7 +189,7 @@ function renderStart() {
       h('li', {}, h('strong', {}, 'Firmendaten'), h('span', {}, 'freiwillig, nur für die Kopfzeile Ihres Resultats')),
       h('li', {}, h('strong', {}, 'Domänen wählen'), h('span', {}, 'alle oder nur die Bereiche, die Sie interessieren')),
       h('li', {}, h('strong', {}, 'Controls bewerten'), h('span', {}, 'je Control eine Einschätzung von 0 bis 3')),
-      h('li', {}, h('strong', {}, 'Resultat ansehen'), h('span', {}, 'Score, Reifegrad, kritische Punkte, Handlungsfelder')),
+      h('li', {}, h('strong', {}, 'Resultat ansehen'), h('span', {}, 'Score, Reifegrad, Handlungsfelder und Bezug zu Standards')),
     ),
     h('div', { class: 'actions' }, button('Selbstbewertung starten', () => goTo('company'), 'primary')),
     h(
@@ -466,7 +469,7 @@ function renderQuestions() {
           : null,
         scaleLegend(),
         glossaryLegend(),
-        domain.controls.map((control) => controlCard(control, refreshProgress)),
+        domain.controls.map((control) => controlCard(control, domain, refreshProgress)),
         openNotice,
         h(
           'div',
@@ -544,7 +547,21 @@ function guidanceDetails(control) {
   );
 }
 
-function controlCard(control, onChange) {
+function refsDetails(control, domain) {
+  return h(
+    'details',
+    { class: 'guidance refs' },
+    h('summary', {}, 'Bezug zu Standards'),
+    h('dl', {}, control.refs.map((r) => [h('dt', {}, r.name), h('dd', {}, r.text ?? 'kein direkter Bezug')])),
+    h(
+      'p',
+      { class: 'hint' },
+      h('a', { href: domain.mappingUrl, target: '_blank', rel: 'noopener' }, 'Control-Mapping im ACP-Framework (Englisch, öffnet in neuem Tab)'),
+    ),
+  );
+}
+
+function controlCard(control, domain, onChange) {
   const name = `answer-${control.id}`;
   const options = [
     ...data.scale.map((s) => ({ value: s.score, short: String(s.score), label: s.label, title: s.description })),
@@ -562,6 +579,7 @@ function controlCard(control, onChange) {
     ),
     h('ul', { class: 'questions' }, control.questions.map((q) => h('li', {}, q))),
     guidanceDetails(control),
+    refsDetails(control, domain),
     h(
       'fieldset',
       { class: 'rating' },
@@ -627,6 +645,7 @@ function renderResult() {
     koSection(result),
     distributionSection(result),
     result.full ? readiness(result) : null,
+    standardsSection(result),
     h(
       'p',
       { class: 'note' },
@@ -823,6 +842,133 @@ function improvementSection(result) {
           rest > 0 ? h('p', { class: 'hint' }, `Dazu ${rest} weitere ${rest === 1 ? 'Control' : 'Controls'} mit Score 0 oder 1.`) : null,
         ]
       : h('p', {}, 'Kein Control mit Score 0 oder 1. Konzentrieren Sie sich darauf, umgesetzte Controls aktiv zu steuern (Score 3).'),
+  );
+}
+
+// Bezug zu Standards: eine Karte mit Umschalter. Im Ausdruck erscheinen alle Ansichten.
+function standardsSection(result) {
+  const views = evaluateStandards(data, state.selected, state.answers);
+  if (!views.some((v) => v.id === state.standardsView)) state.standardsView = views[0].id;
+  const tabs = views.map((v) =>
+    h(
+      'button',
+      {
+        type: 'button',
+        role: 'tab',
+        class: 'std-tab',
+        id: `std-tab-${v.id}`,
+        'aria-controls': `std-panel-${v.id}`,
+        'data-view': v.id,
+        onClick: () => select(v.id),
+      },
+      v.tab,
+    ),
+  );
+  const panels = views.map(standardsPanel);
+
+  function select(id, focus = false) {
+    state.standardsView = id;
+    for (const tab of tabs) {
+      const active = tab.dataset.view === id;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (active && focus) tab.focus();
+    }
+    for (const panel of panels) panel.hidden = panel.dataset.view !== id;
+  }
+
+  function onKeydown(event) {
+    const index = views.findIndex((v) => v.id === state.standardsView);
+    const next = {
+      ArrowRight: (index + 1) % views.length,
+      ArrowLeft: (index - 1 + views.length) % views.length,
+      Home: 0,
+      End: views.length - 1,
+    }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    select(views[next].id, true);
+  }
+
+  select(state.standardsView);
+  return h(
+    'section',
+    { class: 'card standards', 'aria-labelledby': 'standards-title' },
+    h('h2', { id: 'standards-title' }, 'Ihr Resultat im Bezug zu Standards'),
+    h(
+      'p',
+      { class: 'hint' },
+      'Jedes ACP-Control ist im Control-Mapping des Frameworks den Anforderungen anerkannter Standards zugeordnet. ' +
+        'Pro Anforderung sehen Sie, wie viele der zugeordneten Controls Sie mit Score 2 oder höher bewertet haben. ' +
+        'Ein Klick auf eine Zeile zeigt die Controls.',
+    ),
+    h('div', { class: 'std-tabs', role: 'tablist', 'aria-label': 'Standard wählen', onKeydown }, tabs),
+    panels,
+    result.full ? null : h('p', { class: 'hint' }, 'Teilbewertung: Gezählt werden nur Controls der gewählten Domänen.'),
+    h(
+      'p',
+      { class: 'hint' },
+      'Die Zuordnung zeigt thematische Bezüge. Sie ist keine Prüfung der Konformität mit NIS2, keine ISO/IEC-27001-Zertifizierung und keine Konformität mit dem NIST CSF. ',
+      h('a', { href: data.mappingUrl, target: '_blank', rel: 'noopener' }, 'Control-Mapping im ACP-Framework (Englisch)'),
+    ),
+  );
+}
+
+function standardsPanel(view) {
+  return h(
+    'div',
+    { class: 'std-panel', role: 'tabpanel', id: `std-panel-${view.id}`, 'aria-labelledby': `std-tab-${view.id}`, 'data-view': view.id },
+    h('h3', { class: 'std-title' }, view.name),
+    h('p', { class: 'hint' }, view.intro),
+    h('ul', { class: 'std-rows' }, view.rows.map(standardsRow)),
+  );
+}
+
+function standardsRow(row) {
+  const fill = h('span', { class: 'std-fill' });
+  fill.style.width = `${row.scored ? (row.implemented / row.scored) * 100 : 0}%`;
+  let value = `${row.implemented} von ${row.scored} umgesetzt`;
+  if (!row.controls.length) value = 'kein ACP-Control';
+  else if (!row.items.length) value = 'nicht bewertet';
+  else if (!row.scored) value = 'nicht anwendbar';
+
+  let details;
+  if (row.items.length) {
+    details = h(
+      'ul',
+      { class: 'control-list std-controls' },
+      row.items.map((c) =>
+        h(
+          'li',
+          {},
+          c.answer === undefined ? h('span', { class: 'chip' }, '–') : scoreChip(c.answer),
+          h('span', { class: 'control-id' }, c.id),
+          h('span', {}, c.text),
+        ),
+      ),
+    );
+  }
+  const omitted = row.notSelected
+    ? h('p', { class: 'hint' }, `${row.notSelected} ${row.notSelected === 1 ? 'zugeordnetes Control liegt' : 'zugeordnete Controls liegen'} in nicht gewählten Domänen.`)
+    : null;
+
+  return h(
+    'li',
+    { class: 'std-row' },
+    h(
+      'details',
+      {},
+      h(
+        'summary',
+        {},
+        h('span', { class: 'std-ref' }, row.ref),
+        h('span', { class: 'std-label' }, row.label, row.note ? h('span', { class: 'std-note' }, row.note) : null),
+        h('span', { class: 'std-track', 'aria-hidden': 'true' }, fill),
+        h('span', { class: 'std-value' }, value),
+      ),
+      details,
+      omitted,
+    ),
   );
 }
 

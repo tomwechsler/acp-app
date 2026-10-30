@@ -11,7 +11,7 @@
     {
       "label": "ACP: Tests (macOS)",
       "type": "shell",
-      "command": "/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m tests/scoring.test.mjs",
+      "command": "/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m tests/scoring.test.mjs && /System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m tests/standards.test.mjs",
       "dependsOn": "ACP: Daten bauen",
       "group": "test",
       "problemMatcher": []

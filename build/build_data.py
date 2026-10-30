@@ -6,6 +6,7 @@ Liest aus dem ACP-Repository (Git-Submodule `active-cyber-program/`):
   * assessment/assessment-checklist.md         massgebliche Liste der Control-IDs (Englisch)
   * assessment/scoring-model.md                KO-Controls, Schwellenwerte, Reifegrade
   * docs/glossary.de.md                         Glossar (Deutsch)
+  * framework/control-mapping.md               Bezüge zu NIS2, ISO/IEC 27001, NIST CSF, OWASP (Englisch)
   * VERSION                                    Framework-Version
 
 und schreibt `src/data/acp-data.js`. Die Datei wird nie von Hand bearbeitet.
@@ -41,6 +42,8 @@ CHECKLIST = Path("assessment/assessment-checklist.md")
 SCORING_MODEL = Path("assessment/scoring-model.md")
 GLOSSARY = Path("docs/glossary.de.md")
 MIN_GLOSSARY_ENTRIES = 20
+MAPPING = Path("framework/control-mapping.md")
+MAPPING_URL = "https://github.com/tomwechsler/active-cyber-program/blob/main/framework/control-mapping.md"
 VERSION_FILE = Path("VERSION")
 TRANSLATION_CHECK = Path("tools/check-translations.py")
 
@@ -187,7 +190,7 @@ def parse_scale(text):
 
 
 def parse_checklist(text):
-    controls, ko, critical_domains = [], set(), set()
+    controls, ko, critical_domains, texts = [], set(), set(), {}
     domain = None
     for line in text.splitlines():
         heading = DOMAIN_EN.match(line)
@@ -201,9 +204,10 @@ def parse_checklist(text):
         item = CHECKLIST_LINE.match(line)
         if item and item.group(1).split(".")[0] == str(domain):
             controls.append(item.group(1))
+            texts[item.group(1)] = strip_markdown(KO_MARK.sub("", item.group(2)))
             if "[KO]" in item.group(2):
                 ko.add(item.group(1))
-    return controls, ko, critical_domains
+    return controls, ko, critical_domains, texts
 
 
 def parse_scoring_model(text):
@@ -237,8 +241,346 @@ def parse_scoring_model(text):
     }
 
 
+# ---------------------------------------------------------------------------
+# Control-Mapping (framework/control-mapping.md, Englisch)
+#
+# Die Referenzen wie Art. 21(2)(a), A.5.15 oder PR.AA-01 sind sprachneutral und werden
+# übernommen. Deutsch sind nur die Bezeichnungen der Zeilen in der Resultatansicht.
+# Der Build prüft, dass sie zu den Übersichten im Mapping passen.
+
+MAPPING_COLUMNS = ["NIS2", "ISO/IEC 27001:2022", "NIST CSF 2.0"]
+MAPPING_AI_COLUMNS = ["NIST AI RMF 1.0", "ISO/IEC 42001:2023"]
+NONE_MARK = "–"
+NIS2_REF = re.compile(r"^Art\. \d+(\(\d+\))?(\([a-j]\))?$")
+ISO_CLAUSE = re.compile(r"^(\d+)(\.\d+){1,2}$")
+ISO_ANNEX = re.compile(r"^A\.([5-8])\.(\d+)$")
+ISO42001_GROUP = re.compile(r"^A\.(\d+)$")
+CSF_REF = re.compile(r"^(GV|ID|PR|DE|RS|RC)\.[A-Z]{2}-\d\d$")
+AI_RMF_REF = re.compile(r"^(GOVERN|MAP|MEASURE|MANAGE) \d+(\.\d+)?$")
+SEPARATOR_CELL = re.compile(r"^:?-+:?$")
+CSF_TOTAL = re.compile(r"references \*\*(\d+) of (\d+)\*\* NIST CSF 2\.0 subcategories")
+
+# ISO/IEC 27001:2022, Anhang A: Themen mit der Anzahl ihrer Controls (insgesamt 93).
+ISO_THEMES = [
+    ("A.5", "Organisatorische Controls", 37),
+    ("A.6", "Personenbezogene Controls", 8),
+    ("A.7", "Physische Controls", 14),
+    ("A.8", "Technologische Controls", 34),
+]
+CSF_FUNCTIONS = [
+    ("GV", "Govern – Steuern"),
+    ("ID", "Identify – Identifizieren"),
+    ("PR", "Protect – Schützen"),
+    ("DE", "Detect – Erkennen"),
+    ("RS", "Respond – Reagieren"),
+    ("RC", "Recover – Wiederherstellen"),
+]
+# Schlüssel = erste Spalte der «NIS2 Coverage Overview» im Mapping.
+NIS2_LABELS = {
+    "Art. 20(1)": "Billigung und Überwachung durch die Geschäftsleitung",
+    "Art. 20(2)": "Schulung der Geschäftsleitung",
+    "Art. 21(2)(a)": "Risikoanalyse und Sicherheit der Informationssysteme",
+    "Art. 21(2)(b)": "Bewältigung von Sicherheitsvorfällen",
+    "Art. 21(2)(c)": "Betriebskontinuität, Backup, Wiederherstellung und Krisenmanagement",
+    "Art. 21(2)(d), Art. 21(3)": "Sicherheit der Lieferkette",
+    "Art. 21(2)(e)": "Sicherheit bei Erwerb, Entwicklung und Wartung, Umgang mit Schwachstellen",
+    "Art. 21(2)(f)": "Bewertung der Wirksamkeit der Massnahmen",
+    "Art. 21(2)(g)": "Cyberhygiene und Schulungen",
+    "Art. 21(2)(h)": "Kryptografie und Verschlüsselung",
+    "Art. 21(2)(i)": "Personalsicherheit, Zugriffskontrolle und Management der Anlagen",
+    "Art. 21(2)(j)": "Multi-Faktor-Authentifizierung, gesicherte Kommunikation und Notfallkommunikation",
+    "Art. 23": "Meldung erheblicher Sicherheitsvorfälle",
+}
+# Allgemeine Pflicht zu Risikomanagementmassnahmen; die NIS2-Übersicht führt sie nicht als eigene Zeile.
+NIS2_NOT_IN_OVERVIEW = {"Art. 21(1)"}
+COVERAGE_NOTES = {
+    "partial": "Von ACP nur teilweise abgedeckt.",
+    "limited": "Von ACP nur in der Risikobeurteilung berücksichtigt.",
+    "none": "Von ACP nicht abgedeckt.",
+}
+
+
+def control_key(control_id):
+    return tuple(int(part) for part in control_id.split("."))
+
+
+def github_anchor(heading):
+    """Anker, den GitHub für eine Markdown-Überschrift erzeugt."""
+    return re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+
+
+def parse_tables(text):
+    """Liest alle Tabellen mit den Überschriften (# und ##), unter denen sie stehen.
+
+    Jede Zeile muss gleich viele Spalten haben wie die Kopfzeile. So fallen auch
+    Reste alter Tabellen auf, die GitHub nur noch als Text darstellen würde."""
+    tables, block, h1, h2 = [], None, "", ""
+    for number, line in enumerate(text.splitlines(), 1):
+        if line.startswith("# "):
+            h1, h2 = line[2:].strip(), ""
+        elif line.startswith("## "):
+            h2 = line[3:].strip()
+        if not line.startswith("|"):
+            block = None
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if block is None:
+            fail_if(all(SEPARATOR_CELL.match(cell) for cell in cells),
+                    "Control-Mapping Zeile {}: Tabelle ohne Kopfzeile.".format(number))
+            block = {"h1": h1, "h2": h2, "line": number, "header": cells, "rows": []}
+            tables.append(block)
+            continue
+        fail_if(len(cells) != len(block["header"]),
+                "Control-Mapping Zeile {}: {} Spalten statt {} wie in der Kopfzeile.".format(
+                    number, len(cells), len(block["header"])))
+        if block["rows"] or "separator" in block:
+            block["rows"].append(cells)
+        else:
+            fail_if(not all(SEPARATOR_CELL.match(cell) for cell in cells),
+                    "Control-Mapping Zeile {}: Trennzeile der Tabelle fehlt.".format(number))
+            block["separator"] = True
+    return tables
+
+
+def find_table(tables, h1, h2, header):
+    found = [t for t in tables if t["h1"] == h1 and t["h2"] == h2]
+    fail_if(len(found) != 1, "Control-Mapping: Tabelle «{}{}» nicht eindeutig gefunden.".format(
+        h1, " / " + h2 if h2 else ""))
+    fail_if(found[0]["header"] != header, "Control-Mapping: Spalten von «{}» geändert: {}".format(
+        h2 or h1, found[0]["header"]))
+    return found[0]["rows"]
+
+
+def split_refs(cell):
+    return [] if cell == NONE_MARK else [part.strip() for part in re.split(r"[,;]", cell)]
+
+
+def parse_iso_refs(cell, where, annex):
+    """«Cl. 5.1, 5.2; A.5.2» -> ["Cl. 5.1", "Cl. 5.2", "A.5.2"]. Zahlen ohne Präfix gehören zum Kapitel davor."""
+    refs, clause_mode = [], False
+    for ref in split_refs(cell):
+        if ref.startswith("Cl. "):
+            clause_mode, ref = True, ref[4:]
+        elif ref.startswith("A."):
+            clause_mode = False
+            fail_if(not annex(ref), "{}: ungültige Referenz «{}».".format(where, ref))
+            refs.append(ref)
+            continue
+        clause = ISO_CLAUSE.match(ref)
+        fail_if(not clause_mode or not clause or not 4 <= int(clause.group(1)) <= 10,
+                "{}: ungültige Referenz «{}».".format(where, ref))
+        refs.append("Cl. " + ref)
+    return refs
+
+
+def iso27001_annex(ref):
+    match = ISO_ANNEX.match(ref)
+    totals = {theme[2:]: total for theme, _, total in ISO_THEMES}
+    return bool(match) and 1 <= int(match.group(2)) <= totals[match.group(1)]
+
+
+def iso42001_group(ref):
+    match = ISO42001_GROUP.match(ref)
+    return bool(match) and 2 <= int(match.group(1)) <= 10
+
+
+def parse_refs(column, cell, where):
+    if column == "ISO/IEC 27001:2022":
+        return parse_iso_refs(cell, where, iso27001_annex)
+    if column == "ISO/IEC 42001:2023":
+        return parse_iso_refs(cell, where, iso42001_group)
+    pattern = {"NIS2": NIS2_REF, "NIST CSF 2.0": CSF_REF, "NIST AI RMF 1.0": AI_RMF_REF}[column]
+    refs = split_refs(cell)
+    for ref in refs:
+        fail_if(not pattern.match(ref), "{}: ungültige Referenz «{}».".format(where, ref))
+    return refs
+
+
+def coverage_status(text, where):
+    if text.startswith("Covered"):
+        return None
+    if text.startswith("Partial"):
+        return "partial"
+    if text.startswith("Not covered beyond the risk assessment"):
+        return "limited"
+    if text.startswith("Not covered"):
+        return "none"
+    raise BuildError("{}: unbekannte Angabe zur Abdeckung «{}».".format(where, text))
+
+
+def parse_control_ids(cell, all_ids, where):
+    ids = [] if cell == NONE_MARK else [part.strip() for part in cell.split(",")]
+    unknown = [i for i in ids if i not in all_ids]
+    fail_if(unknown, "{}: unbekannte Controls {}.".format(where, unknown))
+    return sorted(ids, key=control_key)
+
+
+def standards_row(ref, label, controls, status=None, note=None):
+    return {
+        "ref": ref,
+        "label": label,
+        "controls": sorted(set(controls), key=control_key),
+        "status": status,
+        "note": note or COVERAGE_NOTES.get(status),
+    }
+
+
+def parse_mapping(text, domains, checklist_texts):
+    """Ergänzt jedes Control um seine Referenzen und erzeugt die Ansichten pro Standard."""
+    tables = parse_tables(text)
+    all_ids = {c["id"] for d in domains for c in d["controls"]}
+    parsed = {}
+
+    for domain in domains:
+        title = next((t["h1"] for t in tables if DOMAIN_EN.match("# " + t["h1"])
+                      and int(DOMAIN_EN.match("# " + t["h1"]).group(1)) == domain["id"]), None)
+        fail_if(title is None, "Control-Mapping: Tabelle für Domäne {} fehlt.".format(domain["id"]))
+        domain_tables = [t for t in tables if t["h1"] == title]
+        fail_if(len(domain_tables) != 1, "Control-Mapping: Domäne {} hat {} Tabellen.".format(
+            domain["id"], len(domain_tables)))
+        header = domain_tables[0]["header"]
+        columns = header[2:]
+        fail_if(header[:2] != ["ACP", "Control"] or columns not in (MAPPING_COLUMNS, MAPPING_COLUMNS + MAPPING_AI_COLUMNS),
+                "Control-Mapping: unerwartete Spalten in Domäne {}: {}".format(domain["id"], header))
+        domain["mappingUrl"] = "{}#{}".format(MAPPING_URL, github_anchor(title))
+
+        rows = {row[0]: row for row in domain_tables[0]["rows"]}
+        fail_if(len(rows) != len(domain_tables[0]["rows"]), "Control-Mapping: doppelte Controls in Domäne {}.".format(domain["id"]))
+        expected = [c["id"] for c in domain["controls"]]
+        fail_if(sorted(rows, key=control_key) != expected,
+                "Control-Mapping: Controls von Domäne {} weichen ab. Mapping: {} Fragenkatalog: {}".format(
+                    domain["id"], sorted(rows, key=control_key), expected))
+        for control in domain["controls"]:
+            row = rows[control["id"]]
+            where = "Control-Mapping, Control {}".format(control["id"])
+            fail_if(strip_markdown(KO_MARK.sub("", row[1])) != checklist_texts[control["id"]],
+                    "{}: Text weicht von der Checkliste ab.".format(where))
+            parsed[control["id"]] = {}
+            control["refs"] = []
+            for column, cell in zip(columns, row[2:]):
+                parsed[control["id"]][column] = parse_refs(column, cell, where)
+                control["refs"].append({
+                    "name": column,
+                    "text": None if cell == NONE_MARK else cell.replace("Cl. ", "Kap. "),
+                })
+
+    def controls_with(column, predicate):
+        return [cid for cid, refs in parsed.items() if any(predicate(r) for r in refs[column])]
+
+    def distinct_refs(column, predicate):
+        return {r for refs in parsed.values() for r in refs[column] if predicate(r)}
+
+    # ISO/IEC 27001:2022: Managementsystem und Anhang A nach Themen
+    not_covered = find_table(tables, "Topics Not Covered by ACP", "", ["Topic", "NIS2", "ISO/IEC 27001:2022", "NIST CSF 2.0"])
+    missing_clauses = [ref[4:] for row in not_covered if row[2].startswith("Cl. ")
+                       for ref in parse_iso_refs(row[2], "Control-Mapping, Topics Not Covered", iso27001_annex)]
+    iso_rows = [standards_row(
+        "Kap. 4–10", "Managementsystem",
+        controls_with("ISO/IEC 27001:2022", lambda r: r.startswith("Cl. ")),
+        "partial" if missing_clauses else None,
+        "Von ACP nur teilweise abgedeckt, nicht enthalten: Kap. {}.".format(", ".join(missing_clauses)) if missing_clauses else None,
+    )]
+    for theme, label, total in ISO_THEMES:
+        in_theme = lambda r, theme=theme: r.startswith(theme + ".")
+        iso_rows.append(standards_row(
+            theme, label, controls_with("ISO/IEC 27001:2022", in_theme),
+            note="ACP bezieht sich auf {} von {} Controls.".format(len(distinct_refs("ISO/IEC 27001:2022", in_theme)), total),
+        ))
+
+    # NIS2: Zeilen und Abdeckung aus der «NIS2 Coverage Overview»
+    overview = find_table(tables, "NIS2 Coverage Overview", "", ["NIS2 requirement", "Topic", "ACP controls", "Coverage"])
+    keys = [row[0] for row in overview]
+    fail_if(sorted(keys) != sorted(NIS2_LABELS),
+            "NIS2-Übersicht und deutsche Bezeichnungen passen nicht zusammen. Mapping: {} App: {}".format(
+                sorted(keys), sorted(NIS2_LABELS)))
+    nis2_rows, in_overview = [], set()
+    for row in overview:
+        refs = [ref.strip() for ref in row[0].split(",")]
+        in_overview.update(refs)
+        nis2_rows.append(standards_row(
+            row[0].replace(", Art. ", ", "), NIS2_LABELS[row[0]],
+            controls_with("NIS2", lambda r, refs=refs: r in refs),
+            coverage_status(row[3], "NIS2-Übersicht, " + row[0]),
+        ))
+    outside = distinct_refs("NIS2", lambda r: r not in in_overview) - NIS2_NOT_IN_OVERVIEW
+    fail_if(outside, "NIS2-Referenzen ohne Zeile in der NIS2-Übersicht: {}".format(sorted(outside)))
+
+    # NIST CSF 2.0: sechs Funktionen; Anzahl Unterkategorien aus der «NIST CSF 2.0 Coverage Overview»
+    csf = find_table(tables, "NIST CSF 2.0 Coverage Overview", "",
+                     ["Function", "Category", "ACP controls", "Subcategories referenced", "Not addressed by ACP (examples)"])
+    totals, referenced = {}, {}
+    for row in csf:
+        category = row[1].split(" ")[0]
+        count = re.match(r"^(\d+) of (\d+)$", row[3])
+        fail_if(not count, "NIST-CSF-Übersicht, {}: Anzahl Unterkategorien nicht lesbar.".format(category))
+        actual = len(distinct_refs("NIST CSF 2.0", lambda r: r.startswith(category + "-")))
+        fail_if(actual != int(count.group(1)),
+                "NIST-CSF-Übersicht, {}: {} Unterkategorien angegeben, in den Domänentabellen {}.".format(
+                    category, count.group(1), actual))
+        function = category[:2]
+        totals[function] = totals.get(function, 0) + int(count.group(2))
+        referenced[function] = referenced.get(function, 0) + actual
+    stated = CSF_TOTAL.search(text)
+    fail_if(not stated or (int(stated.group(1)), int(stated.group(2))) != (sum(referenced.values()), sum(totals.values())),
+            "NIST-CSF-Übersicht: Gesamtzahl der Unterkategorien stimmt nicht.")
+    fail_if(sorted(totals) != sorted(f for f, _ in CSF_FUNCTIONS), "NIST-CSF-Übersicht: Funktionen fehlen.")
+    csf_rows = [standards_row(
+        function, label, controls_with("NIST CSF 2.0", lambda r, function=function: r.startswith(function + ".")),
+        note="ACP bezieht sich auf {} von {} Unterkategorien.".format(referenced[function], totals[function]),
+    ) for function, label in CSF_FUNCTIONS]
+
+    # OWASP Top 10 for LLM Applications 2025 aus der «AI Security Overview»
+    owasp = find_table(tables, "AI Security Overview", "OWASP Top 10 for LLM Applications 2025",
+                       ["OWASP", "Risk", "ACP controls", "Coverage"])
+    fail_if([row[0] for row in owasp] != ["LLM{:02d}".format(i) for i in range(1, 11)],
+            "OWASP-Übersicht: LLM01 bis LLM10 erwartet.")
+    owasp_rows = [standards_row(
+        row[0], row[1], parse_control_ids(row[2], all_ids, "OWASP-Übersicht, " + row[0]),
+        coverage_status(row[3], "OWASP-Übersicht, " + row[0]),
+    ) for row in owasp]
+
+    views = [
+        {
+            "id": "iso27001",
+            "tab": "ISO/IEC 27001",
+            "name": "ISO/IEC 27001:2022",
+            "intro": "Managementsystem (Kapitel 4–10) und die vier Themen von Anhang A.",
+            "rows": iso_rows,
+        },
+        {
+            "id": "nis2",
+            "tab": "NIS2",
+            "name": "NIS2 – Richtlinie (EU) 2022/2555",
+            "intro": "Pflichten der Geschäftsleitung (Art. 20), Risikomanagementmassnahmen (Art. 21) und Meldepflicht (Art. 23). "
+                     "In der Schweiz gilt NIS2 nicht direkt; Schweizer Organisationen, die Dienstleistungen in der EU erbringen, "
+                     "können darunter fallen.",
+            "rows": nis2_rows,
+        },
+        {
+            "id": "csf",
+            "tab": "NIST CSF 2.0",
+            "name": "NIST Cybersecurity Framework 2.0",
+            "intro": "Die sechs Funktionen des NIST CSF. Auch der IKT-Minimalstandard des Bundes baut auf dem NIST CSF auf.",
+            "rows": csf_rows,
+        },
+        {
+            "id": "owasp-llm",
+            "tab": "KI · OWASP",
+            "name": "OWASP Top 10 for LLM Applications 2025",
+            "intro": "Die zehn wichtigsten Sicherheitsrisiken beim Einsatz von KI-Sprachmodellen, etwa in KI-Assistenten und Chat-Tools.",
+            "requiresDomain": 11,
+            "rows": owasp_rows,
+        },
+    ]
+    for view in views:
+        for row in view["rows"]:
+            fail_if(not row["controls"] and row["status"] != "none",
+                    "Ansicht {}, {}: keine ACP-Controls zugeordnet.".format(view["tab"], row["ref"]))
+    return views
+
+
 def validate(domains, scale, checklist, scoring, version, questionnaire_text):
-    checklist_ids, checklist_ko, checklist_critical = checklist
+    checklist_ids, checklist_ko, checklist_critical, _ = checklist
 
     ids = [d["id"] for d in domains]
     fail_if(ids != list(range(1, EXPECTED_DOMAINS + 1)),
@@ -341,6 +683,7 @@ def main():
         glossary = parse_glossary(read(GLOSSARY))
 
         validate(domains, scale, checklist, scoring, version, questionnaire_text)
+        standards = parse_mapping(read(MAPPING), domains, checklist[3])
         check_translations(source)
         check_scoring_model_hash(source, args.accept_scoring_model)
 
@@ -355,6 +698,8 @@ def main():
             "criticalThreshold": scoring["criticalThreshold"],
             "domains": domains,
             "glossary": glossary,
+            "mappingUrl": MAPPING_URL,
+            "standards": standards,
         }
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(
@@ -368,8 +713,8 @@ def main():
         return 1
 
     controls = sum(len(d["controls"]) for d in domains)
-    print("OK: ACP {}, {} Domänen, {} Controls, Commit {} -> {}".format(
-        version, len(domains), controls, commit, OUTPUT.relative_to(APP_ROOT)))
+    print("OK: ACP {}, {} Domänen, {} Controls, Ansichten {}, Commit {} -> {}".format(
+        version, len(domains), controls, ", ".join(v["tab"] for v in standards), commit, OUTPUT.relative_to(APP_ROOT)))
     return 0
 
 

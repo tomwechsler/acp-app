@@ -9,8 +9,8 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 1. Start mit Datenschutzhinweis
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
-4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»)
-5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser
+4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»); pro Control aufklappbar der «Bezug zu Standards» (NIS2, ISO/IEC 27001, NIST CSF, bei KI zusätzlich NIST AI RMF und ISO/IEC 42001)
+5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation), «Ihr Resultat im Bezug zu Standards» (ISO/IEC 27001, NIS2, NIST CSF 2.0 und, falls Domäne 11 bewertet wurde, OWASP Top 10 for LLM); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser
 
 ## Projektstruktur
 
@@ -18,18 +18,20 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 acp-app/
 ├─ active-cyber-program/        ACP-Repository als Git-Submodule (nur lesen)
 ├─ build/
-│  ├─ build_data.py             liest Fragenkatalog inkl. Bewertungshilfe und Glossar, prüft sie, schreibt src/data/acp-data.js
+│  ├─ build_data.py             liest Fragenkatalog inkl. Bewertungshilfe, Glossar und Control-Mapping, prüft sie, schreibt src/data/acp-data.js
 │  └─ scoring-model.sha256      geprüfte Fassung von scoring-model.md
 ├─ src/                         wird veröffentlicht
 │  ├─ index.html
 │  ├─ datenschutz.html
 │  ├─ js/app.js                 Oberfläche und Ablauf
 │  ├─ js/scoring.js             Rechenregeln nach scoring-model.md
+│  ├─ js/standards.js           Auswertung «Bezug zu Standards» nach control-mapping.md
 │  ├─ css/styles.css
 │  ├─ assets/                   Logo, Favicon
 │  ├─ data/acp-data.js          generiert, nicht im Git
 │  └─ staticwebapp.config.json  Sicherheits-Header
 ├─ tests/scoring.test.mjs       Tests der Rechenlogik
+├─ tests/standards.test.mjs     Tests der Auswertung «Bezug zu Standards»
 └─ .github/                     Workflow und Dependabot
 ```
 
@@ -43,12 +45,12 @@ python3 -m http.server 8080 --directory src
 
 Dann <http://localhost:8080> öffnen. In VS Code gibt es dafür die Tasks «ACP: Daten bauen», «ACP: Tests (macOS)» und «ACP: Lokal starten» (Terminal → Run Task).
 
-Tests: `node tests/scoring.test.mjs` oder auf macOS ohne Node.js `/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m tests/scoring.test.mjs`.
+Tests: `node tests/scoring.test.mjs` und `node tests/standards.test.mjs`, auf macOS ohne Node.js mit `/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m` statt `node`.
 
 ## Wie Änderungen im ACP-Repository in die App kommen
 
 1. Dependabot prüft jeden Montag, ob das ACP-Repository neue Commits hat, und öffnet einen Pull Request mit dem neuen Submodule-Stand.
-2. Der Workflow baut die Daten neu und prüft sie: 11 Domänen, Control-IDs identisch mit der Checkliste, Bewertungshilfe bei jedem Control vollständig, KO-Controls und kritische Domänen konsistent, Version stimmt, Übersetzung aktuell, Tests grün.
+2. Der Workflow baut die Daten neu und prüft sie: 11 Domänen, Control-IDs identisch mit der Checkliste, Bewertungshilfe bei jedem Control vollständig, KO-Controls und kritische Domänen konsistent, Version stimmt, Übersetzung aktuell, Control-Mapping vollständig und widerspruchsfrei, Tests grün.
 3. Nach dem Merge veröffentlicht der Workflow die neue Version automatisch.
 
 Sofort aktualisieren statt auf Dependabot zu warten:
@@ -72,6 +74,12 @@ Die Rechenregeln stehen in `src/js/scoring.js`. Ändert sich `assessment/scoring
 3. `build/scoring-model.sha256` mitcommitten.
 
 KO-Controls, Reifegrad-Grenzen und Zertifizierungsschwellen liest der Build direkt aus dem Scoring-Modell; dafür ist keine Code-Änderung nötig.
+
+### Wenn sich das Control-Mapping ändert
+
+Die Referenzen pro Control und die Zeilen der Ansicht «Bezug zu Standards» liest der Build aus `framework/control-mapping.md`. Er bricht ab, wenn eine Tabelle defekt ist, ein Control fehlt oder doppelt vorkommt, ein Control-Text von der Checkliste abweicht, eine Referenz ungültig ist oder die Zahlen der NIST-CSF-Übersicht nicht zu den Domänentabellen passen.
+
+Die deutschen Bezeichnungen der NIS2-Zeilen stehen in `build/build_data.py` (`NIS2_LABELS`). Kommt in der NIS2-Übersicht des Mappings eine Zeile dazu oder ändert sich ihre erste Spalte, stoppt der Build, bis die Bezeichnung dort ergänzt ist.
 
 ## Veröffentlichung
 

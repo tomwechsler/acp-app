@@ -37,8 +37,10 @@ jobs:
       - name: Daten aus dem ACP-Repository erzeugen und prüfen
         run: python3 build/build_data.py
 
-      - name: Rechenlogik testen
-        run: node tests/scoring.test.mjs
+      - name: Rechenlogik und Bezug zu Standards testen
+        run: |
+          node tests/scoring.test.mjs
+          node tests/standards.test.mjs
 
       - name: Auf Azure Static Web Apps veröffentlichen
         if: github.event_name != 'pull_request'
