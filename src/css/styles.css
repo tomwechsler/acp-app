@@ -794,6 +794,7 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 }
 .footer-inner { padding-top: 16px; padding-bottom: 16px; }
 .footer-inner p { margin: 4px 0; }
+.footer-inner a { white-space: nowrap; }
 
 /* Datenschutzseite --------------------------------------------------------- */
 

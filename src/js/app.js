@@ -296,7 +296,12 @@ function renderDomains() {
         h('span', { class: 'domain-name' }, domain.name),
         h('span', { class: 'domain-meta' }, `${domain.controls.length} Controls`, ...domainBadges(domain)),
         domain.conditional
-          ? h('span', { class: 'domain-hint' }, 'Nur auswählen, wenn Ihre Organisation KI-Systeme entwickelt, betreibt oder nutzt.')
+          ? h(
+              'span',
+              { class: 'domain-hint' },
+              'Nur auswählen, wenn Ihre Organisation KI-Systeme entwickelt, betreibt oder nutzt. ' +
+                'Zusätzlich zugeordnet zu NIST AI RMF, ISO/IEC 42001 und den OWASP Top 10 for LLM.',
+            )
           : null,
       ),
     );
