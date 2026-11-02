@@ -32,6 +32,7 @@ acp-app/
 │  └─ staticwebapp.config.json  Sicherheits-Header
 ├─ tests/scoring.test.mjs       Tests der Rechenlogik
 ├─ tests/standards.test.mjs     Tests der Auswertung «Bezug zu Standards»
+├─ LICENSE                      Rechte am Code und Lizenz der Framework-Inhalte
 └─ .github/                     Workflow und Dependabot
 ```
 
@@ -80,6 +81,14 @@ KO-Controls, Reifegrad-Grenzen und Zertifizierungsschwellen liest der Build dire
 Die Referenzen pro Control und die Zeilen der Ansicht «Bezug zu Standards» liest der Build aus `framework/control-mapping.md`. Er bricht ab, wenn eine Tabelle defekt ist, ein Control fehlt oder doppelt vorkommt, ein Control-Text von der Checkliste abweicht, eine Referenz ungültig ist oder die Zahlen der NIST-CSF-Übersicht nicht zu den Domänentabellen passen.
 
 Die deutschen Bezeichnungen der NIS2-Zeilen stehen in `build/build_data.py` (`NIS2_LABELS`). Kommt in der NIS2-Übersicht des Mappings eine Zeile dazu oder ändert sich ihre erste Spalte, stoppt der Build, bis die Bezeichnung dort ergänzt ist.
+
+## Lizenz
+
+* **Code der App:** © Wechsler Information Solution, alle Rechte vorbehalten. Der Quellcode ist öffentlich, damit die Datenschutzaussagen nachprüfbar sind. Kopieren, Verändern, Weitergeben oder Verwenden für eigene Angebote ist ohne schriftliche Zustimmung nicht erlaubt.
+* **Inhalte des ACP-Frameworks** (Controls, Leitfragen, Bewertungshilfe, Glossar, Control-Mapping): [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.de), siehe [active-cyber-program](https://github.com/tomwechsler/active-cyber-program).
+* **Name, Logo, Zertifizierung und Trust Label** «Active Cyber Program» bzw. «ACP» sind nicht lizenziert; es gilt die [Richtlinie zu Marke und Zertifizierung](https://github.com/tomwechsler/active-cyber-program/blob/main/docs/trademark.md).
+
+Details: [LICENSE](LICENSE).
 
 ## Veröffentlichung
 

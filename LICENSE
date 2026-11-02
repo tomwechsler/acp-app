@@ -1,0 +1,45 @@
+ACP Selbstbewertung (Web-App)
+Copyright (c) 2026 Wechsler Information Solution, Tom Wechsler
+Alle Rechte vorbehalten. / All rights reserved.
+
+Quellcode der App
+-----------------
+Der Quellcode dieser App (insbesondere src/, build/ und tests/) ist
+urheberrechtlich geschützt. Er ist öffentlich einsehbar, damit jede
+Person nachprüfen kann, dass die App keine Daten speichert oder überträgt.
+
+Diese Veröffentlichung gewährt keine Lizenz. Ohne schriftliche
+Zustimmung von Wechsler Information Solution darf der Quellcode weder
+ganz noch teilweise kopiert, verändert, weitergegeben oder für eigene
+Angebote verwendet werden. Unberührt bleiben die Rechte, die die
+Nutzungsbedingungen von GitHub gewähren (Ansehen und Forken auf GitHub).
+
+Die Nutzung der veröffentlichten App unter https://acp.videotrainer.ch/
+ist kostenlos.
+
+Inhalte des ACP-Frameworks
+--------------------------
+Die Inhalte des ACP-Frameworks, die die App anzeigt (Controls,
+Leitfragen, Bewertungshilfe, Glossar, Control-Mapping), stammen aus dem
+Repository https://github.com/tomwechsler/active-cyber-program und stehen
+unter der Lizenz Creative Commons Namensnennung – Keine Bearbeitungen 4.0
+International (CC BY-ND 4.0):
+https://creativecommons.org/licenses/by-nd/4.0/deed.de
+
+Marken und Zertifizierung
+-------------------------
+Die Namen «Active Cyber Program» und «ACP», das ACP-Logo, die
+ACP-Zertifizierung und das ACP Trust Label sind nicht lizenziert. Ihre
+Verwendung regelt die Richtlinie
+https://github.com/tomwechsler/active-cyber-program/blob/main/docs/trademark.md
+
+English summary
+---------------
+The source code of this app is published for transparency only. No
+license is granted; copying, modifying, redistributing or reusing it
+requires written permission from Wechsler Information Solution. The ACP
+framework content shown in the app is licensed under CC BY-ND 4.0. The
+ACP name, logo, certification and trust label are not licensed.
+
+Kontakt / Contact: Wechsler Information Solution, Hofackerstrasse 8,
+4625 Oberbuchsiten, Switzerland - training@videotrainer.ch
