@@ -225,6 +225,8 @@ h2 { font-size: 1.15rem; margin: 0 0 12px; }
   margin: 0;
 }
 
+.lead + .lead { margin-top: 10px; }
+
 .note, .hint {
   color: var(--muted);
   font-size: 0.9rem;

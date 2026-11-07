@@ -175,6 +175,11 @@ function renderStart() {
         'Sie erhalten sofort Ihren Score, den Reifegrad und Ihre wichtigsten nächsten Schritte.',
     ),
     h(
+      'p',
+      { class: 'lead' },
+      'Für IT-Dienstleister, IT-Verantwortliche und Geschäftsleitungen: eine gemeinsame Grundlage, um den Stand der Cybersecurity zu zeigen und zu besprechen.',
+    ),
+    h(
       'ul',
       { class: 'facts' },
       h('li', {}, 'Kostenlos und ohne Anmeldung'),
@@ -651,6 +656,17 @@ function renderResult() {
     distributionSection(result),
     result.full ? readiness(result) : null,
     standardsSection(result),
+    h(
+      'section',
+      { class: 'card', 'aria-labelledby': 'use-title' },
+      h('h2', { id: 'use-title' }, 'So nutzen Sie das Resultat'),
+      h(
+        'p',
+        {},
+        'Speichern Sie es als PDF und besprechen Sie es mit Ihrer Geschäftsleitung oder Ihren Kunden. Glaubwürdig wird es, wenn Sie dazu die Nachweise zeigen, die in der Bewertungshilfe unter «Zeigen lassen» stehen. ' +
+          'Wiederholen Sie die Selbstbewertung später und vergleichen Sie die PDFs, um den Fortschritt zu sehen.',
+      ),
+    ),
     h(
       'p',
       { class: 'note' },
