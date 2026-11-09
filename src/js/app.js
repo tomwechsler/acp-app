@@ -929,7 +929,9 @@ function standardsSection(result) {
     h(
       'p',
       { class: 'hint' },
-      'Die Zuordnung zeigt thematische Bezüge. Sie ist keine Prüfung der Konformität mit NIS2, keine ISO/IEC-27001-Zertifizierung und keine Konformität mit dem NIST CSF. ',
+      views.some((v) => v.requiresDomain)
+        ? 'Die Zuordnung zeigt thematische Bezüge. Sie ist keine Prüfung der Konformität mit NIS2, keine ISO/IEC-27001- oder ISO/IEC-42001-Zertifizierung und keine Konformität mit dem NIST CSF oder dem NIST AI RMF. '
+        : 'Die Zuordnung zeigt thematische Bezüge. Sie ist keine Prüfung der Konformität mit NIS2, keine ISO/IEC-27001-Zertifizierung und keine Konformität mit dem NIST CSF. ',
       h('a', { href: data.mappingUrl, target: '_blank', rel: 'noopener' }, 'Control-Mapping im ACP-Framework (Englisch)'),
     ),
   );

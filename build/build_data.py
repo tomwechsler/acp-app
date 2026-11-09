@@ -259,6 +259,7 @@ CSF_REF = re.compile(r"^(GV|ID|PR|DE|RS|RC)\.[A-Z]{2}-\d\d$")
 AI_RMF_REF = re.compile(r"^(GOVERN|MAP|MEASURE|MANAGE) \d+(\.\d+)?$")
 SEPARATOR_CELL = re.compile(r"^:?-+:?$")
 CSF_TOTAL = re.compile(r"references \*\*(\d+) of (\d+)\*\* NIST CSF 2\.0 subcategories")
+AI_RMF_TOTAL = re.compile(r"Domain 11 references \*\*(\d+) of (\d+)\*\* NIST AI RMF categories")
 
 # ISO/IEC 27001:2022, Anhang A: Themen mit der Anzahl ihrer Controls (insgesamt 93).
 ISO_THEMES = [
@@ -275,6 +276,25 @@ CSF_FUNCTIONS = [
     ("RS", "Respond – Reagieren"),
     ("RC", "Recover – Wiederherstellen"),
 ]
+AI_RMF_FUNCTIONS = [
+    ("GOVERN", "Steuern"),
+    ("MAP", "Kontext und Risiken erfassen"),
+    ("MEASURE", "Risiken bewerten und verfolgen"),
+    ("MANAGE", "Risiken behandeln"),
+]
+# Schlüssel = erste Spalte der Übersicht «ISO/IEC 42001:2023 Control Groups» im Mapping.
+ISO42001_LABELS = {
+    "Cl. 4–10": "Managementsystem für KI",
+    "A.2": "Richtlinien zu KI",
+    "A.3": "Interne Organisation",
+    "A.4": "Ressourcen für KI-Systeme",
+    "A.5": "Abschätzung der Auswirkungen von KI-Systemen",
+    "A.6": "Lebenszyklus von KI-Systemen",
+    "A.7": "Daten für KI-Systeme",
+    "A.8": "Informationen für interessierte Parteien",
+    "A.9": "Nutzung von KI-Systemen",
+    "A.10": "Beziehungen zu Dritten und Kunden",
+}
 # Schlüssel = erste Spalte der «NIS2 Coverage Overview» im Mapping.
 NIS2_LABELS = {
     "Art. 20(1)": "Billigung und Überwachung durch die Geschäftsleitung",
@@ -464,11 +484,12 @@ def parse_mapping(text, domains, checklist_texts):
                     "text": None if cell == NONE_MARK else cell.replace("Cl. ", "Kap. "),
                 })
 
+    # Die KI-Spalten (NIST AI RMF, ISO/IEC 42001) gibt es nur in Domäne 11.
     def controls_with(column, predicate):
-        return [cid for cid, refs in parsed.items() if any(predicate(r) for r in refs[column])]
+        return [cid for cid, refs in parsed.items() if any(predicate(r) for r in refs.get(column, []))]
 
     def distinct_refs(column, predicate):
-        return {r for refs in parsed.values() for r in refs[column] if predicate(r)}
+        return {r for refs in parsed.values() for r in refs.get(column, []) if predicate(r)}
 
     # ISO/IEC 27001:2022: Managementsystem und Anhang A nach Themen
     not_covered = find_table(tables, "Topics Not Covered by ACP", "", ["Topic", "NIS2", "ISO/IEC 27001:2022", "NIST CSF 2.0"])
@@ -529,6 +550,57 @@ def parse_mapping(text, domains, checklist_texts):
         note="ACP bezieht sich auf {} von {} Unterkategorien.".format(referenced[function], totals[function]),
     ) for function, label in CSF_FUNCTIONS]
 
+    def check_controls(cell, derived, where):
+        """Die Spalte «ACP controls» einer Übersicht muss zu den Domänentabellen passen."""
+        stated, derived = parse_control_ids(cell, all_ids, where), sorted(set(derived), key=control_key)
+        fail_if(stated != derived, "{}: Controls {} angegeben, in den Domänentabellen {}.".format(where, stated, derived))
+
+    # ISO/IEC 42001:2023: Managementsystem und Gruppen von Anhang A aus der Übersicht im Mapping
+    groups = find_table(tables, "AI Security Overview", "ISO/IEC 42001:2023 Control Groups",
+                        ["ISO/IEC 42001", "Topic", "ACP controls", "Coverage"])
+    fail_if([row[0] for row in groups] != list(ISO42001_LABELS),
+            "ISO/IEC-42001-Übersicht: Zeilen {} erwartet, gefunden {}.".format(list(ISO42001_LABELS), [row[0] for row in groups]))
+    iso42001_rows = []
+    for row in groups:
+        where = "ISO/IEC-42001-Übersicht, " + row[0]
+        is_clause = row[0].startswith("Cl. ")
+        in_group = (lambda r: r.startswith("Cl. ")) if is_clause else (lambda r, ref=row[0]: r == ref)
+        controls = controls_with("ISO/IEC 42001:2023", in_group)
+        check_controls(row[2], controls, where)
+        status = coverage_status(row[3], where)
+        note = None
+        if is_clause:
+            clauses = sorted((r[4:] for r in distinct_refs("ISO/IEC 42001:2023", in_group)),
+                             key=lambda c: [int(p) for p in c.split(".")])
+            listed = clauses[0] if len(clauses) == 1 else "{} und {}".format(", ".join(clauses[:-1]), clauses[-1])
+            note = "{} ACP bezieht sich auf Kap. {}.".format(COVERAGE_NOTES[status], listed)
+        iso42001_rows.append(standards_row(row[0].replace("Cl. ", "Kap. "), ISO42001_LABELS[row[0]], controls, status, note))
+
+    # NIST AI RMF 1.0: vier Funktionen; Anzahl Kategorien aus der Übersicht im Mapping
+    rmf = find_table(tables, "AI Security Overview", "NIST AI RMF 1.0 Functions",
+                     ["Function", "ACP controls", "Categories referenced"])
+    fail_if([row[0] for row in rmf] != [f for f, _ in AI_RMF_FUNCTIONS], "NIST-AI-RMF-Übersicht: Funktionen fehlen.")
+    rmf_rows, rmf_referenced, rmf_total = [], 0, 0
+    for (function, label), row in zip(AI_RMF_FUNCTIONS, rmf):
+        where = "NIST-AI-RMF-Übersicht, " + function
+        in_function = lambda r, function=function: r.startswith(function + " ")
+        controls = controls_with("NIST AI RMF 1.0", in_function)
+        check_controls(row[1], controls, where)
+        count = re.match(r"^(\d+) of (\d+)$", row[2])
+        fail_if(not count, "{}: Anzahl Kategorien nicht lesbar.".format(where))
+        categories = len({r.split(".")[0] for r in distinct_refs("NIST AI RMF 1.0", in_function)})
+        fail_if(categories != int(count.group(1)),
+                "{}: {} Kategorien angegeben, in der Tabelle von Domäne 11 {}.".format(where, count.group(1), categories))
+        rmf_referenced += categories
+        rmf_total += int(count.group(2))
+        rmf_rows.append(standards_row(
+            function, label, controls,
+            note="ACP bezieht sich auf {} von {} Kategorien.".format(categories, count.group(2)),
+        ))
+    stated = AI_RMF_TOTAL.search(text)
+    fail_if(not stated or (int(stated.group(1)), int(stated.group(2))) != (rmf_referenced, rmf_total),
+            "NIST-AI-RMF-Übersicht: Gesamtzahl der Kategorien stimmt nicht.")
+
     # OWASP Top 10 for LLM Applications 2025 aus der «AI Security Overview»
     owasp = find_table(tables, "AI Security Overview", "OWASP Top 10 for LLM Applications 2025",
                        ["OWASP", "Risk", "ACP controls", "Coverage"])
@@ -562,6 +634,24 @@ def parse_mapping(text, domains, checklist_texts):
             "name": "NIST Cybersecurity Framework 2.0",
             "intro": "Die sechs Funktionen des NIST CSF. Auch der IKT-Minimalstandard des Bundes baut auf dem NIST CSF auf.",
             "rows": csf_rows,
+        },
+        {
+            "id": "iso42001",
+            "tab": "KI · ISO/IEC 42001",
+            "name": "ISO/IEC 42001:2023",
+            "intro": "Managementsystem für künstliche Intelligenz (Kapitel 4–10) und die Gruppen von Anhang A. "
+                     "ACP bewertet die Sicherheit beim Einsatz von KI und deckt deshalb keine Gruppe vollständig ab.",
+            "requiresDomain": 11,
+            "rows": iso42001_rows,
+        },
+        {
+            "id": "ai-rmf",
+            "tab": "KI · NIST AI RMF",
+            "name": "NIST AI Risk Management Framework 1.0",
+            "intro": "Die vier Funktionen des NIST AI RMF. Es behandelt neben der Sicherheit auch Fairness, Transparenz "
+                     "und die Auswirkungen von KI auf Menschen und Gesellschaft. ACP bewertet davon nur die Sicherheit.",
+            "requiresDomain": 11,
+            "rows": rmf_rows,
         },
         {
             "id": "owasp-llm",

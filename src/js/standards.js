@@ -1,4 +1,4 @@
-// Bezug der Selbstbewertung zu ISO/IEC 27001, NIS2, NIST CSF und OWASP.
+// Bezug der Selbstbewertung zu ISO/IEC 27001, NIS2, NIST CSF und, mit Domäne 11, zu ISO/IEC 42001, NIST AI RMF und OWASP.
 // Welche Controls zu welcher Anforderung gehören, legt framework/control-mapping.md fest
 // (übernommen von build/build_data.py). Hier wird nur gezählt, es gibt keinen Score pro Standard.
 

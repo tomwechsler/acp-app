@@ -1,4 +1,5 @@
 // Tests der Ansicht «Bezug zu Standards» (Daten aus framework/control-mapping.md).
+// Die KI-Ansichten (ISO/IEC 42001, NIST AI RMF, OWASP) erscheinen nur mit Domäne 11.
 // Ausführen nach `python3 build/build_data.py`:
 //   node tests/standards.test.mjs
 // Bei einem Fehler endet das Skript mit einer Exception (Exit-Code ungleich 0).
@@ -33,10 +34,12 @@ function answersAll(score) {
 const view = (views, id) => views.find((v) => v.id === id);
 const row = (views, id, ref) => view(views, id).rows.find((r) => r.ref === ref);
 
-test('Datenbasis: vier Ansichten mit den erwarteten Zeilen', () => {
-  equal(data.standards.map((v) => v.id).join(','), 'iso27001,nis2,csf,owasp-llm', 'Ansichten');
-  equal(data.standards.map((v) => v.rows.length).join(','), '5,13,6,10', 'Zeilen pro Ansicht');
-  equal(data.standards.find((v) => v.id === 'owasp-llm').requiresDomain, 11, 'KI-Ansicht nur mit Domäne 11');
+test('Datenbasis: sechs Ansichten mit den erwarteten Zeilen', () => {
+  equal(data.standards.map((v) => v.id).join(','), 'iso27001,nis2,csf,iso42001,ai-rmf,owasp-llm', 'Ansichten');
+  equal(data.standards.map((v) => v.rows.length).join(','), '5,13,6,10,4,10', 'Zeilen pro Ansicht');
+  for (const id of ['iso42001', 'ai-rmf', 'owasp-llm']) {
+    equal(data.standards.find((v) => v.id === id).requiresDomain, 11, `KI-Ansicht ${id} nur mit Domäne 11`);
+  }
 });
 
 test('Jedes Control hat Referenzen und erscheint in mindestens einer Ansicht', () => {
@@ -68,6 +71,13 @@ test('Abdeckung durch ACP wird ehrlich ausgewiesen', () => {
   equal(row(views, 'owasp-llm', 'LLM04').status, 'limited', 'LLM04 nur Risikobeurteilung');
   const csf = view(views, 'csf').rows.map((r) => Number(r.note.match(/(\d+) von (\d+)/)[2]));
   equal(csf.reduce((a, b) => a + b, 0), 106, 'NIST CSF 2.0 hat 106 Unterkategorien');
+  equal(row(views, 'iso42001', 'A.7').status, 'none', 'ISO/IEC 42001 A.7 nicht abgedeckt');
+  equal(row(views, 'iso42001', 'A.7').controls.length, 0, 'A.7 ohne ACP-Control');
+  equal(view(views, 'iso42001').rows.every((r) => r.status === 'partial' || r.ref === 'A.7'), true, 'übrige Gruppen teilweise');
+  equal(row(views, 'iso42001', 'Kap. 4–10').note, 'Von ACP nur teilweise abgedeckt. ACP bezieht sich auf Kap. 6.1.2, 6.1.4, 9.3 und 10.1.', 'Kapitel 42001');
+  equal(row(views, 'ai-rmf', 'GOVERN').note, 'ACP bezieht sich auf 4 von 6 Kategorien.', 'GOVERN');
+  const rmf = view(views, 'ai-rmf').rows.map((r) => Number(r.note.match(/(\d+) von (\d+)/)[2]));
+  equal(rmf.reduce((a, b) => a + b, 0), 19, 'NIST AI RMF hat 19 Kategorien');
 });
 
 test('Alle Controls mit Score 2: jede Zeile vollständig umgesetzt', () => {
