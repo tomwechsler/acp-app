@@ -942,6 +942,15 @@ function standardsPanel(view) {
     h('h3', { class: 'std-title' }, view.name),
     h('p', { class: 'hint' }, view.intro),
     h('ul', { class: 'std-rows' }, view.rows.map(standardsRow)),
+    view.source
+      ? h(
+          'p',
+          { class: 'hint' },
+          'Quelle: ',
+          h('a', { href: view.source.url, target: '_blank', rel: 'noopener' }, view.source.text),
+          `. ${view.source.note}`,
+        )
+      : null,
   );
 }
 

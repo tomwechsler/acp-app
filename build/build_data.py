@@ -568,6 +568,11 @@ def parse_mapping(text, domains, checklist_texts):
             "tab": "KI · OWASP",
             "name": "OWASP Top 10 for LLM Applications 2025",
             "intro": "Die zehn wichtigsten Sicherheitsrisiken beim Einsatz von KI-Sprachmodellen, etwa in KI-Assistenten und Chat-Tools.",
+            "source": {
+                "text": "OWASP GenAI Security Project",
+                "url": "https://genai.owasp.org/llm-top-10/",
+                "note": "Lizenz CC BY-SA 4.0. Die Einschätzung der Abdeckung stammt von ACP.",
+            },
             "requiresDomain": 11,
             "rows": owasp_rows,
         },
