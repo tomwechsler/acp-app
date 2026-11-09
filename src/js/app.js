@@ -159,7 +159,8 @@ function privacyNotice(variant = 'full') {
     { class: 'privacy privacy-start', 'aria-label': 'Datenschutzhinweis' },
     h('strong', {}, 'Ihre Daten bleiben bei Ihnen. '),
     'Die App speichert nichts und überträgt nichts an einen Server, ohne Cookies und ohne Tracking. Beim Schliessen oder Neuladen der Seite sind alle Eingaben gelöscht. ' +
-      'Einen Zwischenstand können Sie als Datei auf Ihrem Gerät speichern und später wieder laden. ',
+      'Einen Zwischenstand können Sie als Datei auf Ihrem Gerät speichern und später wieder laden. ' +
+      'Behandeln Sie Resultat und Datei vertraulich, denn sie zeigen auch Lücken. ',
     h('a', { href: 'datenschutz.html', target: '_blank', rel: 'noopener' }, 'Datenschutzerklärung (öffnet in neuem Tab)'),
   );
 }
@@ -686,7 +687,7 @@ function renderResult() {
         'p',
         {},
         'Mit «Antworten als Datei speichern» können Sie die Bewertung später wieder laden, etwa für die nächste Selbstbewertung oder für Ihren IT-Dienstleister. ' +
-          'Die Datei enthält Ihre Firmendaten und Antworten und zeigt damit auch Lücken. Behandeln Sie sie vertraulich. Sie ist kein Nachweis.',
+          'PDF und Datei zeigen auch Lücken: Behandeln Sie sie vertraulich und geben Sie sie nur an Personen weiter, die sie brauchen. Beides ist kein Nachweis.',
       ),
     ),
     h(
