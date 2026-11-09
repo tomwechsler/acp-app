@@ -1,10 +1,12 @@
 // ACP-Selbstbewertung – läuft vollständig im Browser.
 // Alle Eingaben leben nur in der Variablen `state` im Arbeitsspeicher.
 // Kein localStorage, keine Cookies, keine Netzwerkanfragen.
+// Einen Zwischenstand speichert nur die Person selbst als Datei auf ihrem Gerät (savefile.js).
 
 import data from '../data/acp-data.js';
 import { NA, evaluate, domainResult } from './scoring.js';
 import { evaluateStandards } from './standards.js';
+import { MAX_FILE_BYTES, createSaveFile, parseSaveFile, saveFileName } from './savefile.js';
 
 const STEPS = [
   { id: 'start', label: 'Start' },
@@ -49,6 +51,7 @@ function initialState() {
     domainIndex: 0,
     standardsView: data.standards[0].id,
     dirty: false,
+    loadNotice: null,
   };
 }
 
@@ -147,14 +150,16 @@ function privacyNotice(variant = 'full') {
       'aside',
       { class: 'privacy privacy-compact', 'aria-label': 'Datenschutzhinweis' },
       h('strong', {}, 'Dieses Resultat wird nirgends gespeichert. '),
-      'Sobald Sie die Seite schliessen oder neu laden, ist es gelöscht. Mit «Drucken / als PDF speichern» sichern Sie es lokal auf Ihrem Gerät.',
+      'Sobald Sie die Seite schliessen oder neu laden, ist es gelöscht. Mit «Drucken / als PDF speichern» sichern Sie es lokal auf Ihrem Gerät, ' +
+        'mit «Antworten als Datei speichern» Ihre Antworten zum späteren Laden.',
     );
   }
   return h(
     'aside',
     { class: 'privacy privacy-start', 'aria-label': 'Datenschutzhinweis' },
     h('strong', {}, 'Ihre Daten bleiben bei Ihnen. '),
-    'Die App speichert nichts und überträgt nichts an einen Server, ohne Cookies und ohne Tracking. Beim Schliessen oder Neuladen der Seite sind alle Eingaben gelöscht. ',
+    'Die App speichert nichts und überträgt nichts an einen Server, ohne Cookies und ohne Tracking. Beim Schliessen oder Neuladen der Seite sind alle Eingaben gelöscht. ' +
+      'Einen Zwischenstand können Sie als Datei auf Ihrem Gerät speichern und später wieder laden. ',
     h('a', { href: 'datenschutz.html', target: '_blank', rel: 'noopener' }, 'Datenschutzerklärung (öffnet in neuem Tab)'),
   );
 }
@@ -185,6 +190,7 @@ function renderStart() {
       h('li', {}, 'Kostenlos und ohne Anmeldung'),
       h('li', {}, 'Rund 45–60 Minuten für alle Domänen'),
       h('li', {}, 'Einzelne Domänen in wenigen Minuten'),
+      h('li', {}, 'Zwischenstand als Datei speichern und später weitermachen'),
       h('li', {}, 'Zugeordnet zu NIS2, ISO/IEC 27001 und NIST CSF'),
     ),
     privacyNotice(),
@@ -196,7 +202,12 @@ function renderStart() {
       h('li', {}, h('strong', {}, 'Controls bewerten'), h('span', {}, 'je Control eine Einschätzung von 0 bis 3')),
       h('li', {}, h('strong', {}, 'Resultat ansehen'), h('span', {}, 'Score, Reifegrad, Handlungsfelder und Bezug zu Standards')),
     ),
-    h('div', { class: 'actions' }, button('Selbstbewertung starten', () => goTo('company'), 'primary')),
+    h(
+      'div',
+      { class: 'actions actions-start' },
+      button('Selbstbewertung starten', () => goTo('company'), 'primary'),
+      button('Gespeicherte Bewertung laden', () => fileInput.click()),
+    ),
     h(
       'p',
       { class: 'note' },
@@ -262,7 +273,7 @@ function renderCompany() {
     h(
       'p',
       { class: 'lead' },
-      'Alle Angaben sind freiwillig. Sie erscheinen nur in der Kopfzeile Ihres Resultats und werden nicht gespeichert oder übertragen.',
+      'Alle Angaben sind freiwillig. Sie erscheinen nur in der Kopfzeile Ihres Resultats und in einer Datei, die Sie selbst speichern. Die App überträgt sie nicht.',
     ),
     form,
   );
@@ -460,11 +471,16 @@ function renderQuestions() {
   }
 
   refreshProgress();
+  const notice = state.loadNotice;
+  state.loadNotice = null;
 
   return h(
     'section',
     { class: 'view view-questions' },
-    progress,
+    h('div', { class: 'progress-head' }, progress, button('Zwischenstand speichern', saveProgress, 'ghost')),
+    notice
+      ? h('div', { class: 'alert alert-info load-notice', role: 'status' }, notice.map((line) => h('p', {}, line)))
+      : null,
     h(
       'div',
       { class: 'questions-layout' },
@@ -666,6 +682,12 @@ function renderResult() {
         'Speichern Sie es als PDF und besprechen Sie es mit Ihrer Geschäftsleitung oder Ihren Kunden. Glaubwürdig wird es, wenn Sie dazu die Nachweise zeigen, die in der Bewertungshilfe unter «Zeigen lassen» stehen. ' +
           'Wiederholen Sie die Selbstbewertung später und vergleichen Sie die PDFs, um den Fortschritt zu sehen.',
       ),
+      h(
+        'p',
+        {},
+        'Mit «Antworten als Datei speichern» können Sie die Bewertung später wieder laden, etwa für die nächste Selbstbewertung oder für Ihren IT-Dienstleister. ' +
+          'Die Datei enthält Ihre Firmendaten und Antworten und zeigt damit auch Lücken. Behandeln Sie sie vertraulich. Sie ist kein Nachweis.',
+      ),
     ),
     h(
       'p',
@@ -683,6 +705,7 @@ function renderResult() {
       'div',
       { class: 'actions' },
       button('Drucken / als PDF speichern', () => window.print(), 'primary'),
+      button('Antworten als Datei speichern', saveProgress),
       button('Antworten bearbeiten', () => goTo('questions')),
       button('Neue Selbstbewertung', () => {
         if (window.confirm('Alle Eingaben und das Resultat werden gelöscht. Fortfahren?')) {
@@ -1018,6 +1041,91 @@ function distributionSection(result) {
       ),
     ),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Zwischenstand als Datei speichern und laden (nur lokal, siehe savefile.js)
+
+function saveProgress() {
+  const file = createSaveFile(data, state, today());
+  const blob = new Blob([`${JSON.stringify(file, null, 2)}\n`], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = h('a', { href: url, download: saveFileName(state.company, today()), hidden: true });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  state.dirty = false;
+}
+
+const fileInput = h('input', {
+  type: 'file',
+  accept: '.json,application/json',
+  hidden: true,
+  'aria-hidden': 'true',
+  tabindex: '-1',
+  onChange: async () => {
+    const file = fileInput.files[0];
+    fileInput.value = '';
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      window.alert('Diese Datei ist zu gross für einen gespeicherten Zwischenstand der ACP-Selbstbewertung.');
+      return;
+    }
+    let text;
+    try {
+      text = await file.text();
+    } catch {
+      window.alert('Die Datei konnte nicht gelesen werden.');
+      return;
+    }
+    const loaded = parseSaveFile(text, data, { industries: INDUSTRIES, sizes: SIZES });
+    if (!loaded.ok) {
+      window.alert(loaded.error);
+      return;
+    }
+    if (state.dirty && !window.confirm('Ihre aktuellen Eingaben werden durch die geladene Bewertung ersetzt. Fortfahren?')) return;
+    applyLoaded(loaded);
+  },
+});
+document.body.append(fileInput);
+
+function applyLoaded(loaded) {
+  Object.assign(state, initialState(), { company: loaded.company, selected: loaded.selected, answers: loaded.answers });
+  const domains = selectedDomains();
+  const results = domains.map((d) => domainResult(d, state.answers));
+  const total = results.reduce((s, r) => s + r.total, 0);
+  const done = results.reduce((s, r) => s + r.total - r.open, 0);
+  const firstOpen = results.findIndex((r) => r.open > 0);
+  state.domainIndex = Math.max(firstOpen, 0);
+
+  const saved = loaded.savedAt ? ` (gespeichert am ${formatDate(loaded.savedAt)})` : '';
+  const notice = [`Bewertung geladen${saved}: ${done} von ${total} Controls bewertet.`];
+  if (loaded.framework !== data.version) {
+    notice.push(
+      `Die Datei stammt aus dem ACP-Framework ${loaded.framework || 'unbekannter Version'}, die App verwendet Version ${data.version}. ` +
+        'Prüfen Sie Ihre Antworten, weil sich Controls und Leitfragen geändert haben können.',
+    );
+  }
+  if (loaded.ignored) {
+    notice.push(
+      loaded.ignored === 1
+        ? 'Nicht übernommen: 1 Angabe, die nicht zu dieser Version passt oder ungültig ist.'
+        : `Nicht übernommen: ${loaded.ignored} Angaben, die nicht zu dieser Version passen oder ungültig sind.`,
+    );
+  }
+  if (state.company.date && state.company.date !== today()) {
+    notice.push(
+      `Datum der Selbstbewertung: ${formatDate(state.company.date)}. Wenn Sie die Bewertung jetzt aktualisieren, passen Sie das Datum unter «Firmendaten» an.`,
+    );
+  }
+  state.loadNotice = notice;
+
+  if (domains.length) goTo('questions');
+  else {
+    state.loadNotice = null;
+    goTo('domains');
+  }
 }
 
 // ---------------------------------------------------------------------------

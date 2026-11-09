@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "build": "python3 build/build_data.py",
-    "test": "node tests/scoring.test.mjs && node tests/standards.test.mjs"
+    "test": "node tests/scoring.test.mjs && node tests/standards.test.mjs && node tests/savefile.test.mjs"
   }
 }

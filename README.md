@@ -2,15 +2,21 @@
 
 Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Program (ACP)](https://github.com/tomwechsler/active-cyber-program) durchführen. Gehostet auf Azure Static Web Apps.
 
-**Die App speichert keine Daten.** Alle Eingaben bleiben im Arbeitsspeicher des Browsers. Es gibt kein Backend, keine Cookies, keinen Local Storage, keine Analyse-Tools und keine externen Ressourcen. Eine Content Security Policy (`connect-src 'none'`) blockiert zusätzlich jede Datenübertragung.
+**Die App speichert keine Daten.** Alle Eingaben bleiben im Arbeitsspeicher des Browsers. Es gibt kein Backend, keine Cookies, keinen Local Storage, keine Analyse-Tools und keine externen Ressourcen. Eine Content Security Policy (`connect-src 'none'`) blockiert zusätzlich jede Datenübertragung. Einen Zwischenstand kann die Person selbst als Datei auf ihrem Gerät speichern und später wieder laden; die Datei entsteht und wird gelesen nur im Browser.
 
 ## Ablauf in der App
 
-1. Start mit Datenschutzhinweis
+1. Start mit Datenschutzhinweis; «Gespeicherte Bewertung laden» liest eine zuvor gespeicherte Datei und führt zum ersten offenen Control
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
-4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»); pro Control aufklappbar der «Bezug zu Standards» (NIS2, ISO/IEC 27001, NIST CSF, bei KI zusätzlich NIST AI RMF und ISO/IEC 42001)
-5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation), «Ihr Resultat im Bezug zu Standards» (ISO/IEC 27001, NIS2, NIST CSF 2.0 und, falls Domäne 11 bewertet wurde, ISO/IEC 42001, NIST AI RMF und OWASP Top 10 for LLM); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser
+4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»); pro Control aufklappbar der «Bezug zu Standards» (NIS2, ISO/IEC 27001, NIST CSF, bei KI zusätzlich NIST AI RMF und ISO/IEC 42001); «Zwischenstand speichern» sichert Firmendaten, gewählte Domänen und Antworten als JSON-Datei
+5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation), «Ihr Resultat im Bezug zu Standards» (ISO/IEC 27001, NIS2, NIST CSF 2.0 und, falls Domäne 11 bewertet wurde, ISO/IEC 42001, NIST AI RMF und OWASP Top 10 for LLM); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser, «Antworten als Datei speichern» die Antworten zum späteren Laden
+
+### Datei «Zwischenstand»
+
+`src/js/savefile.js` erstellt und liest die Datei. Sie enthält Format und Formatversion, einen Hinweis zur Vertraulichkeit, die Framework-Version, das Speicherdatum, die Firmendaten, die gewählten Domänen und die Antworten der gewählten Domänen (0–3 oder `"na"`). Ein Resultat wird nicht gespeichert, sondern beim Laden neu berechnet.
+
+Beim Laden wird nur übernommen, was zu dieser App passt: bekannte Domänen und Controls, gültige Antworten (kein N/A bei KO-Controls), Branche und Grösse aus den Auswahllisten, Texte höchstens 120 Zeichen, Dateien höchstens 100 KB. Alles andere wird verworfen und gezählt. Stammt die Datei aus einer anderen Framework-Version, weist die App darauf hin.
 
 ## Projektstruktur
 
@@ -26,12 +32,14 @@ acp-app/
 │  ├─ js/app.js                 Oberfläche und Ablauf
 │  ├─ js/scoring.js             Rechenregeln nach scoring-model.md
 │  ├─ js/standards.js           Auswertung «Bezug zu Standards» nach control-mapping.md
+│  ├─ js/savefile.js            Zwischenstand als Datei speichern und laden
 │  ├─ css/styles.css
 │  ├─ assets/                   Logo, Favicon
 │  ├─ data/acp-data.js          generiert, nicht im Git
 │  └─ staticwebapp.config.json  Sicherheits-Header
 ├─ tests/scoring.test.mjs       Tests der Rechenlogik
 ├─ tests/standards.test.mjs     Tests der Auswertung «Bezug zu Standards»
+├─ tests/savefile.test.mjs      Tests der Datei «Zwischenstand»
 ├─ LICENSE                      Rechte am Code und Lizenz der Framework-Inhalte
 └─ .github/                     Workflow und Dependabot
 ```
@@ -46,7 +54,7 @@ python3 -m http.server 8080 --directory src
 
 Dann <http://localhost:8080> öffnen. In VS Code gibt es dafür die Tasks «ACP: Daten bauen», «ACP: Tests (macOS)» und «ACP: Lokal starten» (Terminal → Run Task).
 
-Tests: `node tests/scoring.test.mjs` und `node tests/standards.test.mjs`, auf macOS ohne Node.js mit `/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m` statt `node`.
+Tests: `node tests/scoring.test.mjs`, `node tests/standards.test.mjs` und `node tests/savefile.test.mjs`, auf macOS ohne Node.js mit `/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -m` statt `node`.
 
 ## Wie Änderungen im ACP-Repository in die App kommen
 

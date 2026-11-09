@@ -324,6 +324,7 @@ h2 { font-size: 1.15rem; margin: 0 0 12px; }
 }
 .how span { color: var(--muted); font-size: 0.9rem; }
 .view-start .actions + .note { margin-top: 12px; }
+.actions-start { justify-content: flex-start; }
 
 @media (max-width: 560px) {
   .how li {
@@ -449,7 +450,14 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 
 /* Bewertung ---------------------------------------------------------------- */
 
+.progress-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: end; }
+@media (max-width: 560px) {
+  .progress-head { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .progress-head .btn { justify-self: start; padding-left: 0; }
+}
 .progress { display: grid; gap: 6px; }
+.load-notice p { margin: 0; }
+.load-notice p + p { margin-top: 6px; }
 .progress-text { font-size: 0.9rem; font-weight: 600; color: var(--muted); }
 .progress-track { display: block; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .progress-fill { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.2s; }
