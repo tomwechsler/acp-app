@@ -317,7 +317,7 @@ function renderDomains() {
               'span',
               { class: 'domain-hint' },
               'Nur auswählen, wenn Ihre Organisation KI-Systeme entwickelt, betreibt oder nutzt. ' +
-                'Zusätzlich zugeordnet zu NIST AI RMF, ISO/IEC 42001 und den OWASP Top 10 for LLM.',
+                'Zusätzlich zugeordnet zu NIST AI RMF, ISO/IEC 42001 und der OWASP GenAI LLM Top 10.',
             )
           : null,
       ),

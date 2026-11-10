@@ -260,6 +260,8 @@ AI_RMF_REF = re.compile(r"^(GOVERN|MAP|MEASURE|MANAGE) \d+(\.\d+)?$")
 SEPARATOR_CELL = re.compile(r"^:?-+:?$")
 CSF_TOTAL = re.compile(r"references \*\*(\d+) of (\d+)\*\* NIST CSF 2\.0 subcategories")
 AI_RMF_TOTAL = re.compile(r"Domain 11 references \*\*(\d+) of (\d+)\*\* NIST AI RMF categories")
+# Überschrift der OWASP-Übersicht im Mapping; zugleich der Name der Ansicht in der App.
+OWASP_LLM_EDITION = "OWASP GenAI LLM Top 10 2026"
 
 # ISO/IEC 27001:2022, Anhang A: Themen mit der Anzahl ihrer Controls (insgesamt 93).
 ISO_THEMES = [
@@ -508,6 +510,11 @@ def parse_mapping(text, domains, checklist_texts):
             note="ACP bezieht sich auf {} von {} Controls.".format(len(distinct_refs("ISO/IEC 27001:2022", in_theme)), total),
         ))
 
+    def check_controls(cell, derived, where):
+        """Die Spalte «ACP controls» einer Übersicht muss zu den Domänentabellen passen."""
+        stated, derived = parse_control_ids(cell, all_ids, where), sorted(set(derived), key=control_key)
+        fail_if(stated != derived, "{}: Controls {} angegeben, in den Domänentabellen {}.".format(where, stated, derived))
+
     # NIS2: Zeilen und Abdeckung aus der «NIS2 Coverage Overview»
     overview = find_table(tables, "NIS2 Coverage Overview", "", ["NIS2 requirement", "Topic", "ACP controls", "Coverage"])
     keys = [row[0] for row in overview]
@@ -518,9 +525,10 @@ def parse_mapping(text, domains, checklist_texts):
     for row in overview:
         refs = [ref.strip() for ref in row[0].split(",")]
         in_overview.update(refs)
+        controls = controls_with("NIS2", lambda r, refs=refs: r in refs)
+        check_controls(row[2], controls, "NIS2-Übersicht, " + row[0])
         nis2_rows.append(standards_row(
-            row[0].replace(", Art. ", ", "), NIS2_LABELS[row[0]],
-            controls_with("NIS2", lambda r, refs=refs: r in refs),
+            row[0].replace(", Art. ", ", "), NIS2_LABELS[row[0]], controls,
             coverage_status(row[3], "NIS2-Übersicht, " + row[0]),
         ))
     outside = distinct_refs("NIS2", lambda r: r not in in_overview) - NIS2_NOT_IN_OVERVIEW
@@ -532,6 +540,8 @@ def parse_mapping(text, domains, checklist_texts):
     totals, referenced = {}, {}
     for row in csf:
         category = row[1].split(" ")[0]
+        check_controls(row[2], controls_with("NIST CSF 2.0", lambda r: r.startswith(category + "-")),
+                       "NIST-CSF-Übersicht, " + category)
         count = re.match(r"^(\d+) of (\d+)$", row[3])
         fail_if(not count, "NIST-CSF-Übersicht, {}: Anzahl Unterkategorien nicht lesbar.".format(category))
         actual = len(distinct_refs("NIST CSF 2.0", lambda r: r.startswith(category + "-")))
@@ -549,11 +559,6 @@ def parse_mapping(text, domains, checklist_texts):
         function, label, controls_with("NIST CSF 2.0", lambda r, function=function: r.startswith(function + ".")),
         note="ACP bezieht sich auf {} von {} Unterkategorien.".format(referenced[function], totals[function]),
     ) for function, label in CSF_FUNCTIONS]
-
-    def check_controls(cell, derived, where):
-        """Die Spalte «ACP controls» einer Übersicht muss zu den Domänentabellen passen."""
-        stated, derived = parse_control_ids(cell, all_ids, where), sorted(set(derived), key=control_key)
-        fail_if(stated != derived, "{}: Controls {} angegeben, in den Domänentabellen {}.".format(where, stated, derived))
 
     # ISO/IEC 42001:2023: Managementsystem und Gruppen von Anhang A aus der Übersicht im Mapping
     groups = find_table(tables, "AI Security Overview", "ISO/IEC 42001:2023 Control Groups",
@@ -601,8 +606,8 @@ def parse_mapping(text, domains, checklist_texts):
     fail_if(not stated or (int(stated.group(1)), int(stated.group(2))) != (rmf_referenced, rmf_total),
             "NIST-AI-RMF-Übersicht: Gesamtzahl der Kategorien stimmt nicht.")
 
-    # OWASP Top 10 for LLM Applications 2025 aus der «AI Security Overview»
-    owasp = find_table(tables, "AI Security Overview", "OWASP Top 10 for LLM Applications 2025",
+    # OWASP GenAI LLM Top 10 2026 aus der «AI Security Overview»
+    owasp = find_table(tables, "AI Security Overview", OWASP_LLM_EDITION,
                        ["OWASP", "Risk", "ACP controls", "Coverage"])
     fail_if([row[0] for row in owasp] != ["LLM{:02d}".format(i) for i in range(1, 11)],
             "OWASP-Übersicht: LLM01 bis LLM10 erwartet.")
@@ -656,11 +661,11 @@ def parse_mapping(text, domains, checklist_texts):
         {
             "id": "owasp-llm",
             "tab": "KI · OWASP",
-            "name": "OWASP Top 10 for LLM Applications 2025",
+            "name": OWASP_LLM_EDITION,
             "intro": "Die zehn wichtigsten Sicherheitsrisiken beim Einsatz von KI-Sprachmodellen, etwa in KI-Assistenten und Chat-Tools.",
             "source": {
                 "text": "OWASP GenAI Security Project",
-                "url": "https://genai.owasp.org/llm-top-10/",
+                "url": "https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/",
                 "note": "Lizenz CC BY-SA 4.0. Die Einschätzung der Abdeckung stammt von ACP.",
             },
             "requiresDomain": 11,

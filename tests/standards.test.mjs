@@ -68,7 +68,10 @@ test('Abdeckung durch ACP wird ehrlich ausgewiesen', () => {
   equal(row(views, 'iso27001', 'Kap. 4–10').status, 'partial', 'Managementsystem teilweise');
   equal(row(views, 'nis2', 'Art. 21(2)(e)').status, 'partial', 'NIS2 (e) teilweise');
   equal(row(views, 'nis2', 'Art. 21(2)(b)').status, null, 'NIS2 (b) abgedeckt');
-  equal(row(views, 'owasp-llm', 'LLM04').status, 'limited', 'LLM04 nur Risikobeurteilung');
+  equal(view(views, 'owasp-llm').name, 'OWASP GenAI LLM Top 10 2026', 'OWASP-Ausgabe 2026');
+  equal(row(views, 'owasp-llm', 'LLM03').label, 'Excessive Agency', 'LLM03 2026');
+  equal(row(views, 'owasp-llm', 'LLM05').status, 'limited', 'LLM05 nur Risikobeurteilung');
+  equal(row(views, 'owasp-llm', 'LLM08').label, 'Hidden Context Exposure', 'LLM08 2026');
   const csf = view(views, 'csf').rows.map((r) => Number(r.note.match(/(\d+) von (\d+)/)[2]));
   equal(csf.reduce((a, b) => a + b, 0), 106, 'NIST CSF 2.0 hat 106 Unterkategorien');
   equal(row(views, 'iso42001', 'A.7').status, 'none', 'ISO/IEC 42001 A.7 nicht abgedeckt');
