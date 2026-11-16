@@ -10,7 +10,7 @@ Statische Web App, mit der Firmen eine Selbstbewertung nach dem [Active Cyber Pr
 2. Firmendaten (freiwillig, nur für die Kopfzeile des Resultats)
 3. Auswahl der Control Domains (Abwahl von Pflichtdomänen ergibt eine «Teilbewertung»)
 4. Bewertung jedes Controls mit 0–3 oder N/A (N/A bei KO-Controls gesperrt), mit Leitfragen, Bewertungshilfe («Zeigen lassen», typisch für 2 und 3) und Glossar («Begriffe erklärt»); pro Control aufklappbar der «Bezug zu Standards» (NIS2, ISO/IEC 27001, NIST CSF, bei KI zusätzlich NIST AI RMF und ISO/IEC 42001); «Zwischenstand speichern» sichert Firmendaten, gewählte Domänen und Antworten als JSON-Datei
-5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne, KO-Controls, Zertifizierungsreife (Indikation), «Ihr Resultat im Bezug zu Standards» (ISO/IEC 27001, NIS2, NIST CSF 2.0 und, falls Domäne 11 bewertet wurde, ISO/IEC 42001, NIST AI RMF und OWASP GenAI LLM Top 10); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser, «Antworten als Datei speichern» die Antworten zum späteren Laden
+5. Resultat: Gesamtscore, Reifegrad, wichtigste nächste Schritte, Scores pro Domäne (mit Anzahl N/A), KO-Controls, Zertifizierungsreife (Indikation, mit Liste der als N/A markierten Controls, die im Assessment begründet sein müssen), «Ihr Resultat im Bezug zu Standards» (ISO/IEC 27001, NIS2, NIST CSF 2.0 und, falls Domäne 11 bewertet wurde, ISO/IEC 42001, NIST AI RMF und OWASP GenAI LLM Top 10); «Drucken / als PDF speichern» sichert das Resultat inkl. aller Antworten lokal im Browser, «Antworten als Datei speichern» die Antworten zum späteren Laden
 
 ### Datei «Zwischenstand»
 

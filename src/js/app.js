@@ -537,7 +537,7 @@ function scaleLegend() {
       {},
       data.scale.map((s) => [h('dt', {}, `${s.score} – ${s.label}`), h('dd', {}, s.description)]),
       h('dt', {}, 'N/A – Nicht anwendbar'),
-      h('dd', {}, 'Das Thema existiert in Ihrer Organisation nicht (z. B. kein WLAN). Nicht anwendbare Controls zählen nicht zum Domänenscore. Bei Knock-out-Controls ist N/A nicht möglich.'),
+      h('dd', {}, 'Das Thema existiert in Ihrer Organisation nicht (z. B. kein WLAN). Nicht anwendbare Controls zählen nicht zum Domänenscore. Im ACP-Assessment muss jedes N/A begründet sein. Bei Knock-out-Controls ist N/A nicht möglich.'),
     ),
     h('p', { class: 'hint' }, 'Umfasst ein Control mehrere Aspekte, bestimmt der schwächste wesentliche Aspekt den Score. Kleine Organisationen brauchen keine umfangreiche Dokumentation: Kurze, klare Regeln genügen, wenn sie gelebt werden.'),
     h('p', { class: 'hint' }, 'Bei einem echten ACP-Assessment muss jede Bewertung mit Nachweisen belegt sein; ohne Nachweis gilt ein Control als 0.'),
@@ -798,8 +798,36 @@ function readiness(result) {
         ),
       ),
     ),
+    naList(result),
     h('p', { class: 'hint' }, 'Zusätzlich verlangt eine Zertifizierung, dass jede Bewertung mit dokumentierten Nachweisen belegt ist.'),
   );
+}
+
+// Nicht anwendbare Controls offen ausweisen: Sie zählen nicht zum Score und müssen im Assessment begründet sein.
+function naList(result) {
+  const na = result.naControls;
+  if (!na.length) return null;
+  return [
+    h(
+      'p',
+      { class: 'hint na-note' },
+      h('strong', {}, `Als nicht anwendbar markiert: ${na.length} ${na.length === 1 ? 'Control' : 'Controls'}. `),
+      'Sie zählen nicht zum Score. In einem ACP-Assessment muss jedes N/A begründet sein und vom Assessor akzeptiert werden.',
+    ),
+    h(
+      'ul',
+      { class: 'control-list' },
+      na.map((c) =>
+        h(
+          'li',
+          {},
+          scoreChip(NA),
+          h('span', { class: 'control-id' }, c.id),
+          h('span', {}, c.text, h('span', { class: 'control-domain' }, `${c.domainId}. ${c.domainName}`)),
+        ),
+      ),
+    ),
+  ];
 }
 
 function domainChart(result) {
@@ -831,7 +859,12 @@ function domainChart(result) {
           h('span', { class: 'bar-label' }, `${d.id}. ${d.name}`, d.critical ? h('span', { class: 'critical-mark', title: 'kritische Domäne' }, ' · kritisch') : null),
           h('span', { class: 'bar-track' }, fill, tick),
           h('span', { class: 'bar-value' }, d.score === null ? 'N/A' : fmt(d.score)),
-          h('span', { class: 'bar-level' }, d.maturity ? `L${d.maturity.level} ${d.maturity.name}` : 'alle Controls N/A'),
+          h(
+            'span',
+            { class: 'bar-level' },
+            d.maturity ? `L${d.maturity.level} ${d.maturity.name}` : 'alle Controls N/A',
+            d.maturity && d.na ? h('span', { class: 'bar-na' }, `${d.na} von ${d.total} Controls N/A`) : null,
+          ),
         );
       }),
     ),

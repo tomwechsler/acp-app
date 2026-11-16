@@ -641,6 +641,7 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 .checks .met .check-icon { background: var(--good-soft); color: var(--good); }
 .checks .unmet .check-icon { background: var(--bad-soft); color: var(--bad); }
 .check-detail { display: block; font-size: 0.85rem; color: var(--muted); }
+.na-note { margin-top: 16px; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 12px; }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
@@ -668,6 +669,7 @@ h1 .badge { font-size: 0.8rem; letter-spacing: 0; }
 .bar-threshold { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--text); opacity: 0.7; }
 .bar-value { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .bar-level { color: var(--muted); font-size: 0.85rem; }
+.bar-na { display: block; }
 @media (max-width: 640px) {
   .bar-row { grid-template-columns: 1fr 3.5em; gap: 4px 12px; }
   .bar-label { grid-column: 1 / -1; }

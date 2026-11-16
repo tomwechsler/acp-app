@@ -109,6 +109,8 @@ export function evaluate(data, selectedIds, answers) {
     koControls,
     improvements,
     distribution,
+    // Als nicht anwendbar markierte Controls, damit das Resultat sie offen ausweist.
+    naControls: controls.filter((c) => c.answer === NA && !c.ko),
   };
 }
 

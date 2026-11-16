@@ -113,6 +113,15 @@ test('N/A zählt nicht zum Domänenscore', () => {
   equal(r.open, 0, 'offen');
 });
 
+test('N/A-Controls werden im Resultat offen ausgewiesen', () => {
+  const answers = answersFor({ 4: [2, 2, NA, 2, 2, 2], 7: [3, NA, NA, NA, NA, NA, NA] });
+  const r = evaluate(data, [4, 7], answers);
+  equal(r.naControls.map((c) => c.id).join(','), '7.2,7.3,7.4,7.5,7.6,7.7', 'N/A-Controls ohne KO-Control 4.3');
+  equal(r.domains.find((d) => d.id === 7).na, 6, 'N/A in Domäne 7');
+  equal(r.domains.find((d) => d.id === 7).total, 7, 'Controls in Domäne 7');
+  equal(evaluate(data, [4], answersFor({ 4: S200 })).naControls.length, 0, 'ohne N/A keine Liste');
+});
+
 test('Domäne nur mit N/A wird vom Gesamtscore ausgeschlossen', () => {
   const answers = answersFor({ 6: [3, 3, 3, 3, 3, 3], 7: [NA, NA, NA, NA, NA, NA, NA] });
   const r = evaluate(data, [6, 7], answers);
