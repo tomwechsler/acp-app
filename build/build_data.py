@@ -10,6 +10,8 @@ Liest aus dem ACP-Repository (Git-Submodule `active-cyber-program/`):
   * VERSION                                    Framework-Version
 
 und schreibt `src/data/acp-data.js`. Die Datei wird nie von Hand bearbeitet.
+Zusätzlich prüft der Build, dass die statische Startseite in `src/index.html`
+(für Suchmaschinen) die richtige Anzahl Controls und Domänen nennt.
 
 Der Build bricht ab (Exit-Code 1), wenn der Inhalt nicht zu den erwarteten Regeln
 passt. So bleibt bei einem fehlerhaften Repository-Stand die bisherige Version online.
@@ -35,6 +37,7 @@ from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = APP_ROOT / "src" / "data" / "acp-data.js"
+INDEX_HTML = APP_ROOT / "src" / "index.html"
 SCORING_HASH_FILE = APP_ROOT / "build" / "scoring-model.sha256"
 
 QUESTIONNAIRE = Path("assessment/assessment-questionnaire.de.md")
@@ -73,6 +76,14 @@ class BuildError(Exception):
 def fail_if(condition, message):
     if condition:
         raise BuildError(message)
+
+
+def check_static_start(domains):
+    """Die statische Startseite in index.html (für Suchmaschinen) muss die Zahlen des Frameworks nennen."""
+    controls = sum(len(d["controls"]) for d in domains)
+    expected = "anhand von {} Controls in {} Domänen".format(controls, len(domains))
+    fail_if(expected not in INDEX_HTML.read_text(encoding="utf-8"),
+            "src/index.html: Die statische Startseite nennt nicht «{}». Bitte den Text anpassen.".format(expected))
 
 
 def find_source(explicit):
@@ -783,6 +794,7 @@ def main():
         glossary = parse_glossary(read(GLOSSARY))
 
         validate(domains, scale, checklist, scoring, version, questionnaire_text)
+        check_static_start(domains)
         standards = parse_mapping(read(MAPPING), domains, checklist[3])
         check_translations(source)
         check_scoring_model_hash(source, args.accept_scoring_model)

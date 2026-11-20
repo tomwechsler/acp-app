@@ -27,14 +27,15 @@ acp-app/
 │  ├─ build_data.py             liest Fragenkatalog inkl. Bewertungshilfe, Glossar und Control-Mapping, prüft sie, schreibt src/data/acp-data.js
 │  └─ scoring-model.sha256      geprüfte Fassung von scoring-model.md
 ├─ src/                         wird veröffentlicht
-│  ├─ index.html
+│  ├─ index.html                Startseite, auch als statisches HTML für Suchmaschinen
 │  ├─ datenschutz.html
+│  ├─ robots.txt, sitemap.xml   für Suchmaschinen
 │  ├─ js/app.js                 Oberfläche und Ablauf
 │  ├─ js/scoring.js             Rechenregeln nach scoring-model.md
 │  ├─ js/standards.js           Auswertung «Bezug zu Standards» nach control-mapping.md
 │  ├─ js/savefile.js            Zwischenstand als Datei speichern und laden
 │  ├─ css/styles.css
-│  ├─ assets/                   Logo, Favicon
+│  ├─ assets/                   Logo, Favicon, Bild für die Linkvorschau
 │  ├─ data/acp-data.js          generiert, nicht im Git
 │  └─ staticwebapp.config.json  Sicherheits-Header
 ├─ tests/scoring.test.mjs       Tests der Rechenlogik
@@ -72,7 +73,7 @@ git commit -am "ACP-Framework aktualisiert" && git push
 
 ### Wenn sich die Anzahl Controls ändert
 
-Die Tests in `tests/scoring.test.mjs` prüfen die Anzahl Controls pro Domäne und rechnen die Beispiele des ACP-Repositorys nach. Kommen Controls dazu, schlägt der Workflow im Dependabot-Pull-Request fehl, bis die Tests angepasst sind. Die bisherige Version bleibt solange online.
+Die Tests in `tests/scoring.test.mjs` prüfen die Anzahl Controls pro Domäne und rechnen die Beispiele des ACP-Repositorys nach. Kommen Controls dazu, schlägt der Workflow im Dependabot-Pull-Request fehl, bis die Tests angepasst sind. Die bisherige Version bleibt solange online. Ebenso stoppt der Build, bis die Zahlen in der statischen Startseite von `src/index.html` angepasst sind (siehe «Suchmaschinen und Linkvorschau»).
 
 ### Wenn sich das Scoring-Modell ändert
 
@@ -91,6 +92,14 @@ Die Referenzen pro Control und die Zeilen der Ansicht «Bezug zu Standards» lie
 Die OWASP-Ansicht liest die Übersicht «OWASP GenAI LLM Top 10 2026» (`OWASP_LLM_EDITION` in `build/build_data.py`). Erscheint eine neue Ausgabe, stoppt der Build, bis die Überschrift dort angepasst ist.
 
 Die deutschen Bezeichnungen der NIS2-Zeilen stehen in `build/build_data.py` (`NIS2_LABELS`). Kommt in der NIS2-Übersicht des Mappings eine Zeile dazu oder ändert sich ihre erste Spalte, stoppt der Build, bis die Bezeichnung dort ergänzt ist.
+
+## Suchmaschinen und Linkvorschau
+
+* `src/index.html` enthält Titel, Beschreibung, die kanonische Adresse `https://acp.videotrainer.ch/` und die Vorschau für geteilte Links (Open Graph, Bild `src/assets/og-image.png`, 1200 × 630 Pixel).
+* Die Startseite steht zusätzlich als statisches HTML in `src/index.html`, damit Suchmaschinen und Linkvorschauen auch ohne JavaScript Text finden. Die App ersetzt sie beim Laden durch dieselbe Startseite aus `src/js/app.js`. Wird der Text der Startseite geändert, beide Stellen anpassen. Die Zahl der Controls und Domänen prüft der Build.
+* `src/robots.txt` erlaubt alles und verweist auf `src/sitemap.xml`. Die Fehlerseite ist mit `noindex` markiert.
+* Die App ist auch unter der Standardadresse der Azure Static Web App erreichbar. Die kanonische Adresse zeigt Suchmaschinen, dass `acp.videotrainer.ch` gilt.
+* Es gibt keine Analyse- oder Tracking-Werkzeuge. Google Search Console und Bing Webmaster Tools brauchen keinen Code auf der Seite, wenn die Domain über einen DNS-Eintrag bestätigt wird.
 
 ## Lizenz
 

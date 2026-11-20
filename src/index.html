@@ -3,10 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Kostenlose Cybersecurity-Selbstbewertung nach dem Active Cyber Program (ACP). Läuft vollständig im Browser, speichert keine Daten.">
+  <meta name="description" content="Kostenloser Cybersecurity-Check für KMU als Selbstbewertung: Score, Reifegrad und nächste Schritte, mit Bezug zu NIS2, ISO/IEC 27001 und NIST CSF. Ohne Anmeldung, Daten bleiben im Browser.">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="light dark">
-  <title>ACP Selbstbewertung</title>
+  <title>Kostenloser Cybersecurity-Check für KMU · ACP-Selbstbewertung</title>
+  <link rel="canonical" href="https://acp.videotrainer.ch/">
+  <!-- Vorschau beim Teilen eines Links, zum Beispiel auf LinkedIn -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ACP-Selbstbewertung">
+  <meta property="og:locale" content="de_CH">
+  <meta property="og:url" content="https://acp.videotrainer.ch/">
+  <meta property="og:title" content="Kostenloser Cybersecurity-Check für KMU · ACP-Selbstbewertung">
+  <meta property="og:description" content="Selbstbewertung nach dem Active Cyber Program: Score, Reifegrad und nächste Schritte. Ohne Anmeldung, keine Cookies, Ihre Daten bleiben im Browser.">
+  <meta property="og:image" content="https://acp.videotrainer.ch/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ACP-Selbstbewertung: Wie aktiv ist Ihre Cybersecurity?">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="css/styles.css">
   <script type="module" src="js/app.js"></script>
@@ -28,6 +41,21 @@
   </header>
 
   <main id="app" class="wrap" tabindex="-1">
+    <!-- Startseite als statisches HTML für Suchmaschinen und Linkvorschauen. Die App ersetzt sie beim Laden durch dieselbe Startseite.
+         build/build_data.py prüft, dass die Anzahl Controls und Domänen zum Framework passt. -->
+    <section class="view view-start">
+      <p class="eyebrow">Active Cyber Program · Kostenlose Selbstbewertung</p>
+      <h1>Wie aktiv ist Ihre Cybersecurity?</h1>
+      <p class="lead">Prüfen Sie Ihre Organisation anhand von 74 Controls in 11 Domänen. Sie erhalten sofort Ihren Score, den Reifegrad und Ihre wichtigsten nächsten Schritte.</p>
+      <p class="lead">Für IT-Dienstleister, IT-Verantwortliche und Geschäftsleitungen: eine gemeinsame Grundlage, um den Stand der Cybersecurity zu zeigen und zu besprechen.</p>
+      <ul class="facts">
+        <li>Kostenlos und ohne Anmeldung</li>
+        <li>Rund 45–60 Minuten für alle Domänen</li>
+        <li>Einzelne Domänen in wenigen Minuten</li>
+        <li>Zwischenstand als Datei speichern und später weitermachen</li>
+        <li>Zugeordnet zu NIS2, ISO/IEC 27001 und NIST CSF</li>
+      </ul>
+    </section>
     <noscript>
       <p class="alert alert-warning">Diese Selbstbewertung benötigt JavaScript. Alle Berechnungen laufen lokal in Ihrem Browser; es werden keine Daten übertragen.</p>
     </noscript>

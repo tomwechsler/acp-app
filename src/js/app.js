@@ -36,6 +36,7 @@ const SIZES = ['1–9', '10–49', '50–249', '250–999', '1000 und mehr'];
 
 const MAX_IMPROVEMENTS = 10;
 const CONTACT_EMAIL = 'training@videotrainer.ch';
+const START_TITLE = 'Kostenloser Cybersecurity-Check für KMU · ACP-Selbstbewertung';
 
 const totalControls = data.domains.reduce((sum, d) => sum + d.controls.length, 0);
 const requiredDomains = data.domains.filter((d) => !d.conditional);
@@ -127,7 +128,8 @@ function render() {
   app.replaceChildren(view());
   renderStepper();
   const current = STEPS.find((s) => s.id === state.step);
-  document.title = state.step === 'start' ? 'ACP Selbstbewertung' : `${current.label} – ACP Selbstbewertung`;
+  // Der Titel der Startseite steht gleich auch in index.html (für Suchmaschinen).
+  document.title = state.step === 'start' ? START_TITLE : `${current.label} – ACP-Selbstbewertung`;
 }
 
 function renderStepper() {
